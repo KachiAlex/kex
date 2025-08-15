@@ -20,6 +20,7 @@ app.get('/health', (_req, res) => {
 	return res.json({ status: 'ok', service: 'kex-api' });
 });
 
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
 app.use('/api/orders', require('./routes/orders'));
 

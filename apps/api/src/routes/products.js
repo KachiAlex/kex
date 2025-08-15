@@ -4,13 +4,7 @@ const Product = require('../models/Product');
 
 const router = express.Router();
 
-// simple admin middleware using header key
-function requireAdmin(req, res, next) {
-	const key = req.header('x-admin-key');
-	if (!process.env.ADMIN_KEY) return res.status(500).json({ error: 'ADMIN_KEY not set' });
-	if (key !== process.env.ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
-	return next();
-}
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 // validation schema
 const productSchema = z.object({
@@ -64,7 +58,7 @@ router.get('/featured', async (_req, res) => {
 	}
 });
 
-router.post('/', requireAdmin, async (req, res) => {
+router.post('/', requireAuth, requireAdmin, async (req, res) => {
 	try {
 		const parsed = productSchema.parse(req.body);
 		const created = await Product.create(parsed);
@@ -75,7 +69,7 @@ router.post('/', requireAdmin, async (req, res) => {
 	}
 });
 
-router.put('/:id', requireAdmin, async (req, res) => {
+router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
 	try {
 		const partialSchema = productSchema.partial();
 		const parsed = partialSchema.parse(req.body);
@@ -87,7 +81,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
 	}
 });
 
-router.delete('/:id', requireAdmin, async (req, res) => {
+router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
 	try {
 		await Product.findByIdAndDelete(req.params.id);
 		return res.status(204).end();

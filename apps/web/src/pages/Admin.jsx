@@ -1,13 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
+import { isAuthenticated, signOut } from "../lib/auth";
+import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
-const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY || "";
+
+function authHeaders() {
+	const token = localStorage.getItem("kex_token");
+	return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 export default function AdminPage() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
 	const [items, setItems] = useState([]);
 	const [form, setForm] = useState({ name: "", price: "", quantity: "", featured: false });
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		if (!isAuthenticated()) {
+			navigate("/login");
+			return;
+		}
+	}, [navigate]);
 
 	async function fetchProducts() {
 		setLoading(true);
@@ -43,14 +57,14 @@ export default function AdminPage() {
 			};
 			const res = await fetch(`${API_BASE}/api/products`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json", "x-admin-key": ADMIN_KEY },
+				headers: { "Content-Type": "application/json", ...authHeaders() },
 				body: JSON.stringify(payload)
 			});
 			if (!res.ok) throw new Error("create_failed");
 			setForm({ name: "", price: "", quantity: "", featured: false });
 			await fetchProducts();
 		} catch (e) {
-			setError("Failed to add product");
+			setError("Failed to add product (auth?)");
 		} finally {
 			setLoading(false);
 		}
@@ -62,13 +76,13 @@ export default function AdminPage() {
 		try {
 			const res = await fetch(`${API_BASE}/api/products/${id}`, {
 				method: "PUT",
-				headers: { "Content-Type": "application/json", "x-admin-key": ADMIN_KEY },
+				headers: { "Content-Type": "application/json", ...authHeaders() },
 				body: JSON.stringify({ featured })
 			});
 			if (!res.ok) throw new Error("update_failed");
 			await fetchProducts();
 		} catch (e) {
-			setError("Failed to update product");
+			setError("Failed to update product (auth?)");
 		} finally {
 			setLoading(false);
 		}
@@ -80,12 +94,12 @@ export default function AdminPage() {
 		try {
 			const res = await fetch(`${API_BASE}/api/products/${id}`, {
 				method: "DELETE",
-				headers: { "x-admin-key": ADMIN_KEY }
+				headers: { ...authHeaders() }
 			});
 			if (!res.ok && res.status !== 204) throw new Error("delete_failed");
 			await fetchProducts();
 		} catch (e) {
-			setError("Failed to delete product");
+			setError("Failed to delete product (auth?)");
 		} finally {
 			setLoading(false);
 		}
@@ -94,7 +108,10 @@ export default function AdminPage() {
 	return (
 		<div className="min-h-screen bg-white">
 			<div className="mx-auto max-w-6xl px-4 py-6">
-				<h1 className="text-2xl font-semibold">Admin • Products</h1>
+				<div className="flex items-center justify-between">
+					<h1 className="text-2xl font-semibold">Admin • Products</h1>
+					<button onClick={()=>{signOut(); navigate('/login');}} className="text-sm text-red-600">Sign out</button>
+				</div>
 				<p className="text-sm text-gray-600">Use the form to add products. Toggle featured and manage inventory.</p>
 
 				<form onSubmit={addProduct} className="mt-6 grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
