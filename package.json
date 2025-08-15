@@ -1,0 +1,12 @@
+{
+	"name": "kex-monorepo",
+	"private": true,
+	"engines": {
+		"node": ">=20.0.0"
+	},
+	"scripts": {
+		"start": "cd apps/api && npm start",
+		"dev": "cd apps/api && npm run dev",
+		"build": "echo 'no build needed for api'"
+	}
+} 
