@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: kex-api
+    env: node
+    rootDir: apps/api
+    plan: free
+    autoDeploy: true
+    buildCommand: ""
+    startCommand: "node src/server.js"
+    healthCheckPath: "/health"
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: CORS_ORIGIN
+        value: https://your-frontend-domain
+      - key: CLIENT_BASE_URL
+        value: https://your-frontend-domain
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: FLUTTERWAVE_SECRET_KEY
+        sync: false 
