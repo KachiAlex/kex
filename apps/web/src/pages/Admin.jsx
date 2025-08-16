@@ -13,6 +13,8 @@ export default function AdminPage() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
 	const [items, setItems] = useState([]);
+	const [orders, setOrders] = useState([]);
+	const [stats, setStats] = useState({ totalOrders: 0, paidOrders: 0, totalRevenue: 0 });
 	const [form, setForm] = useState({ name: "", price: "", quantity: "", featured: false });
 	const navigate = useNavigate();
 
@@ -24,7 +26,6 @@ export default function AdminPage() {
 	}, [navigate]);
 
 	async function fetchProducts() {
-		setLoading(true);
 		setError("");
 		try {
 			const res = await fetch(`${API_BASE}/api/products`);
@@ -32,13 +33,30 @@ export default function AdminPage() {
 			setItems(Array.isArray(data) ? data : []);
 		} catch (e) {
 			setError("Failed to load products");
-		} finally {
-			setLoading(false);
+		}
+	}
+
+	async function fetchOrders() {
+		setError("");
+		try {
+			const email = JSON.parse(localStorage.getItem("kex_user")||"{}")?.email;
+			const qs = email ? `?email=${encodeURIComponent(email)}` : "";
+			const [olist, sres] = await Promise.all([
+				fetch(`${API_BASE}/api/orders${qs}`),
+				fetch(`${API_BASE}/api/orders/stats`),
+			]);
+			const ordersJson = await olist.json();
+			const statsJson = await sres.json();
+			setOrders(Array.isArray(ordersJson) ? ordersJson : []);
+			if (statsJson && typeof statsJson === 'object') setStats(statsJson);
+		} catch (e) {
+			setError("Failed to load orders/stats");
 		}
 	}
 
 	useEffect(() => {
-		fetchProducts();
+		setLoading(true);
+		Promise.all([fetchProducts(), fetchOrders()]).finally(()=>setLoading(false));
 	}, []);
 
 	async function addProduct(e) {
@@ -109,48 +127,88 @@ export default function AdminPage() {
 		<div className="min-h-screen bg-white">
 			<div className="mx-auto max-w-6xl px-4 py-6">
 				<div className="flex items-center justify-between">
-					<h1 className="text-2xl font-semibold">Admin • Products</h1>
+					<h1 className="text-2xl font-semibold">Dashboard</h1>
 					<button onClick={()=>{signOut(); navigate('/login');}} className="text-sm text-red-600">Sign out</button>
 				</div>
-				<p className="text-sm text-gray-600">Use the form to add products. Toggle featured and manage inventory.</p>
+				<p className="text-sm text-gray-600">Overview of your store performance and orders.</p>
 
-				<form onSubmit={addProduct} className="mt-6 grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
-					<input className="border rounded px-3 py-2" placeholder="Name" value={form.name} onChange={(e)=>setForm(v=>({...v, name:e.target.value}))} required />
-					<input type="number" step="0.01" className="border rounded px-3 py-2" placeholder="Price" value={form.price} onChange={(e)=>setForm(v=>({...v, price:e.target.value}))} required />
-					<input type="number" className="border rounded px-3 py-2" placeholder="Quantity" value={form.quantity} onChange={(e)=>setForm(v=>({...v, quantity:e.target.value}))} required />
-					<label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={form.featured} onChange={(e)=>setForm(v=>({...v, featured:e.target.checked}))} /> Featured</label>
-					<button disabled={loading} className="rounded-md bg-black text-white px-4 py-2 text-sm hover:opacity-90 transition">Add</button>
-				</form>
+				{/* Analytics cards */}
+				<div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+					<div className="rounded-xl bg-gray-50 p-4 border"><div className="text-sm text-gray-600">Total revenue</div><div className="text-2xl font-semibold">₦{stats.totalRevenue?.toLocaleString?.() ?? 0}</div></div>
+					<div className="rounded-xl bg-gray-50 p-4 border"><div className="text-sm text-gray-600">Paid orders</div><div className="text-2xl font-semibold">{stats.paidOrders ?? 0}</div></div>
+					<div className="rounded-xl bg-gray-50 p-4 border"><div className="text-sm text-gray-600">All orders</div><div className="text-2xl font-semibold">{stats.totalOrders ?? 0}</div></div>
+				</div>
 
-				{error && <div className="mt-4 text-red-600 text-sm">{error}</div>}
-
-				<div className="mt-6 overflow-x-auto">
-					<table className="min-w-full border text-sm">
-						<thead className="bg-gray-50">
-							<tr>
-								<th className="p-2 border">Name</th>
-								<th className="p-2 border">Price</th>
-								<th className="p-2 border">Qty</th>
-								<th className="p-2 border">Featured</th>
-								<th className="p-2 border">Actions</th>
-							</tr>
-						</thead>
-						<tbody>
-							{items.map((it)=> (
-								<tr key={it._id}>
-									<td className="p-2 border">{it.name}</td>
-									<td className="p-2 border">${it.price?.toFixed?.(2) ?? it.price}</td>
-									<td className="p-2 border">{it.quantity}</td>
-									<td className="p-2 border">
-										<button onClick={()=>toggleFeatured(it._id, !it.featured)} className="rounded border px-2 py-1 hover:bg-black hover:text-white transition">{it.featured ? 'Yes' : 'No'}</button>
-									</td>
-									<td className="p-2 border">
-										<button onClick={()=>removeProduct(it._id)} className="rounded border px-2 py-1 text-red-600 hover:bg-red-600 hover:text-white transition">Delete</button>
-									</td>
+				{/* Order history */}
+				<div className="mt-8">
+					<h2 className="text-lg font-semibold">Recent orders</h2>
+					<div className="mt-3 overflow-x-auto">
+						<table className="min-w-full border text-sm">
+							<thead className="bg-gray-50">
+								<tr>
+									<th className="p-2 border">Reference</th>
+									<th className="p-2 border">Customer</th>
+									<th className="p-2 border">Amount</th>
+									<th className="p-2 border">Status</th>
+									<th className="p-2 border">Date</th>
 								</tr>
-							))}
-						</tbody>
-					</table>
+							</thead>
+							<tbody>
+								{orders.map((o)=> (
+									<tr key={o._id}>
+										<td className="p-2 border">{o.reference}</td>
+										<td className="p-2 border">{o.customerEmail}</td>
+										<td className="p-2 border">₦{o.amount?.toLocaleString?.() ?? o.amount}</td>
+										<td className="p-2 border">{o.status}</td>
+										<td className="p-2 border">{new Date(o.createdAt).toLocaleString()}</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+				{/* Product management (kept below) */}
+				<div className="mt-10">
+					<h2 className="text-lg font-semibold">Products</h2>
+					<form onSubmit={addProduct} className="mt-4 grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+						<input className="border rounded px-3 py-2" placeholder="Name" value={form.name} onChange={(e)=>setForm(v=>({...v, name:e.target.value}))} required />
+						<input type="number" step="0.01" className="border rounded px-3 py-2" placeholder="Price" value={form.price} onChange={(e)=>setForm(v=>({...v, price:e.target.value}))} required />
+						<input type="number" className="border rounded px-3 py-2" placeholder="Quantity" value={form.quantity} onChange={(e)=>setForm(v=>({...v, quantity:e.target.value}))} required />
+						<label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={form.featured} onChange={(e)=>setForm(v=>({...v, featured:e.target.checked}))} /> Featured</label>
+						<button disabled={loading} className="rounded-md bg-black text-white px-4 py-2 text-sm hover:opacity-90 transition">Add</button>
+					</form>
+
+					{error && <div className="mt-4 text-red-600 text-sm">{error}</div>}
+
+					<div className="mt-6 overflow-x-auto">
+						<table className="min-w-full border text-sm">
+							<thead className="bg-gray-50">
+								<tr>
+									<th className="p-2 border">Name</th>
+									<th className="p-2 border">Price</th>
+									<th className="p-2 border">Qty</th>
+									<th className="p-2 border">Featured</th>
+									<th className="p-2 border">Actions</th>
+								</tr>
+							</thead>
+							<tbody>
+								{items.map((it)=> (
+									<tr key={it._id}>
+										<td className="p-2 border">{it.name}</td>
+										<td className="p-2 border">${it.price?.toFixed?.(2) ?? it.price}</td>
+										<td className="p-2 border">{it.quantity}</td>
+										<td className="p-2 border">
+											<button onClick={()=>toggleFeatured(it._id, !it.featured)} className="rounded border px-2 py-1 hover:bg-black hover:text-white transition">{it.featured ? 'Yes' : 'No'}</button>
+										</td>
+										<td className="p-2 border">
+											<button onClick={()=>removeProduct(it._id)} className="rounded border px-2 py-1 text-red-600 hover:bg-red-600 hover:text-white transition">Delete</button>
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
 				</div>
 			</div>
 		</div>
