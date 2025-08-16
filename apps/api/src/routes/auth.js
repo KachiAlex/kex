@@ -4,18 +4,13 @@ const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const { z } = require('zod');
 const User = require('../models/User');
+const { sendEmail, otpHtml } = require('../services/email');
 
 const router = express.Router();
 
 const signupSchema = z.object({ name: z.string().min(1), email: z.string().email(), password: z.string().min(6), phone: z.string().min(6) });
 const loginSchema = z.object({ email: z.string().email(), password: z.string().min(6) });
 const verifySchema = z.object({ email: z.string().email(), otp: z.string().min(4).max(6) });
-
-async function sendEmailOtp({ to, otp }) {
-	// Minimal SMTP-like hook: integrate real provider here
-	// eslint-disable-next-line no-console
-	console.log(`[OTP] Sending ${otp} to ${to}`);
-}
 
 router.post('/signup', async (req, res) => {
 	try {
@@ -27,7 +22,7 @@ router.post('/signup', async (req, res) => {
 		const otp = String(Math.floor(100000 + Math.random() * 900000));
 		const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
 		await User.create({ name, email, phone, passwordHash, role, emailVerified: false, emailOtp: otp, emailOtpExpiresAt: otpExpires });
-		await sendEmailOtp({ to: email, otp });
+		await sendEmail({ to: email, subject: 'KEX — Verify your email', html: otpHtml({ otp, name }) });
 		return res.json({ status: 'otp_sent', email });
 	} catch (e) {
 		return res.status(400).json({ error: 'Invalid payload' });
