@@ -7,19 +7,44 @@ const User = require('../models/User');
 
 const router = express.Router();
 
-const signupSchema = z.object({ name: z.string().optional(), email: z.string().email(), password: z.string().min(6) });
+const signupSchema = z.object({ name: z.string().min(1), email: z.string().email(), password: z.string().min(6), phone: z.string().min(6) });
 const loginSchema = z.object({ email: z.string().email(), password: z.string().min(6) });
+const verifySchema = z.object({ email: z.string().email(), otp: z.string().min(4).max(6) });
+
+async function sendEmailOtp({ to, otp }) {
+	// Minimal SMTP-like hook: integrate real provider here
+	// eslint-disable-next-line no-console
+	console.log(`[OTP] Sending ${otp} to ${to}`);
+}
 
 router.post('/signup', async (req, res) => {
 	try {
-		const { name = '', email, password } = signupSchema.parse(req.body);
+		const { name, email, password, phone } = signupSchema.parse(req.body);
 		const existing = await User.findOne({ email });
 		if (existing) return res.status(409).json({ error: 'Email already in use' });
 		const passwordHash = await bcrypt.hash(password, 10);
 		const role = email.endsWith('@kex.local') ? 'admin' : 'customer';
-		const user = await User.create({ name, email, passwordHash, role });
-		const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '7d' });
-		return res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+		const otp = String(Math.floor(100000 + Math.random() * 900000));
+		const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+		await User.create({ name, email, phone, passwordHash, role, emailVerified: false, emailOtp: otp, emailOtpExpiresAt: otpExpires });
+		await sendEmailOtp({ to: email, otp });
+		return res.json({ status: 'otp_sent', email });
+	} catch (e) {
+		return res.status(400).json({ error: 'Invalid payload' });
+	}
+});
+
+router.post('/verify', async (req, res) => {
+	try {
+		const { email, otp } = verifySchema.parse(req.body);
+		const user = await User.findOne({ email });
+		if (!user || !user.emailOtp || !user.emailOtpExpiresAt) return res.status(400).json({ error: 'No OTP pending' });
+		if (user.emailOtp !== otp) return res.status(400).json({ error: 'Invalid OTP' });
+		if (user.emailOtpExpiresAt < new Date()) return res.status(400).json({ error: 'OTP expired' });
+		await User.updateOne({ _id: user._id }, { emailVerified: true, emailOtp: null, emailOtpExpiresAt: null });
+		const fresh = await User.findById(user._id);
+		const token = jwt.sign({ id: fresh._id, email: fresh.email, role: fresh.role }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '7d' });
+		return res.json({ token, user: { id: fresh._id, name: fresh.name, email: fresh.email, role: fresh.role } });
 	} catch (e) {
 		return res.status(400).json({ error: 'Invalid payload' });
 	}
@@ -32,6 +57,7 @@ router.post('/login', async (req, res) => {
 		if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 		const ok = await bcrypt.compare(password, user.passwordHash);
 		if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+		if (!user.emailVerified) return res.status(403).json({ error: 'email_unverified' });
 		const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '7d' });
 		return res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
 	} catch (e) {
@@ -64,7 +90,6 @@ router.get('/google/callback', async (req, res) => {
 		const clientBase = process.env.CLIENT_BASE_URL || 'http://localhost:5173';
 		if (!clientId || !clientSecret || !redirectUri) return res.status(500).send('Google OAuth not configured');
 
-		// Exchange code for tokens
 		const tokenRes = await axios.post('https://oauth2.googleapis.com/token', new URLSearchParams({
 			code,
 			client_id: clientId,
@@ -76,15 +101,13 @@ router.get('/google/callback', async (req, res) => {
 		const accessToken = tokenRes.data?.access_token;
 		if (!accessToken) return res.status(401).send('Token exchange failed');
 
-		// Fetch userinfo
 		const infoRes = await axios.get('https://openidconnect.googleapis.com/v1/userinfo', { headers: { Authorization: `Bearer ${accessToken}` } });
 		const { email, name } = infoRes.data || {};
 		if (!email) return res.status(400).send('No email from Google');
 
-		// Find or create user
 		let user = await User.findOne({ email });
 		if (!user) {
-			user = await User.create({ name: name || '', email, passwordHash: '', role: email.endsWith('@kex.local') ? 'admin' : 'customer' });
+			user = await User.create({ name: name || '', email, passwordHash: '', role: email.endsWith('@kex.local') ? 'admin' : 'customer', emailVerified: true });
 		}
 
 		const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '7d' });
