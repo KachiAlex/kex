@@ -45,7 +45,7 @@ function Hero() {
 						<h1 className="text-3xl md:text-4xl font-semibold">Smart. Stylish. Yours.</h1>
 						<p className="mt-3 text-white/80">Discover premium smartwatches, ambient lights, innovative gadgets, and gifts. Designed for modern life.</p>
 						<div className="mt-6 flex gap-3">
-							<a href="#products" className="button-primary">Shop now</a>
+							<a href="#products" className="bg-kex-secondary text-kex-primary px-4 py-2 rounded-md hover:opacity-90 transition">Shop now</a>
 							<a href="#" className="rounded-md border border-white/20 px-4 py-2 text-white hover:bg-white hover:text-black transition">Browse categories</a>
 						</div>
 					</div>
