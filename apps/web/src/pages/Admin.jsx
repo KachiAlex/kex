@@ -18,6 +18,19 @@ export default function AdminPage() {
 	const [form, setForm] = useState({ name: "", price: "", quantity: "", featured: false });
 	const navigate = useNavigate();
 
+	// Accept token/email from OAuth callback
+	useEffect(() => {
+		const url = new URL(window.location.href);
+		const token = url.searchParams.get('token');
+		const email = url.searchParams.get('email');
+		const name = url.searchParams.get('name');
+		if (token) {
+			localStorage.setItem('kex_token', token);
+			if (email) localStorage.setItem('kex_user', JSON.stringify({ email, name }));
+			window.history.replaceState({}, '', '/admin');
+		}
+	}, []);
+
 	useEffect(() => {
 		if (!isAuthenticated()) {
 			navigate("/login");
