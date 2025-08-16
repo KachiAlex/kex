@@ -79,4 +79,33 @@ router.get('/verify/:reference', async (req, res) => {
 	}
 });
 
+// List orders (optionally filter by email)
+router.get('/', async (req, res) => {
+	try {
+		const { email } = req.query;
+		const query = email ? { customerEmail: email } : {};
+		const orders = await Order.find(query).sort({ createdAt: -1 });
+		return res.json(orders);
+	} catch (e) {
+		return res.status(500).json({ error: 'Failed to fetch orders' });
+	}
+});
+
+// Basic analytics
+router.get('/stats', async (_req, res) => {
+	try {
+		const [summary] = await Order.aggregate([
+			{ $group: {
+				_id: null,
+				totalOrders: { $sum: 1 },
+				paidOrders: { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, 1, 0] } },
+				totalRevenue: { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, '$amount', 0] } },
+			} }
+		]);
+		return res.json(summary || { totalOrders: 0, paidOrders: 0, totalRevenue: 0 });
+	} catch (e) {
+		return res.status(500).json({ error: 'Failed to fetch stats' });
+	}
+});
+
 module.exports = router; 
