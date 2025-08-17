@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Chart, LineController, LineElement, PointElement, LinearScale, CategoryScale, DoughnutController, ArcElement, BarController, BarElement } from "chart.js";
 import { useNavigate } from "react-router-dom";
 
@@ -21,6 +21,8 @@ export default function AdminPage() {
 	const [form, setForm] = useState({ name: "", price: "", quantity: "", featured: false, category: "", description: "", images: [], videos: [] });
 	const [newImageUrl, setNewImageUrl] = useState("");
 	const [newVideoUrl, setNewVideoUrl] = useState("");
+	const imageFileRef = useRef(null);
+	const videoFileRef = useRef(null);
 	const [showAddModal, setShowAddModal] = useState(false);
 	const [me, setMe] = useState(null);
 	const [showProfileModal, setShowProfileModal] = useState(false);
@@ -598,16 +600,14 @@ export default function AdminPage() {
 										<label className="block text-sm font-medium text-gray-700 mb-2">Images</label>
 										<div className="flex items-center space-x-2 mb-2">
 											<input value={newImageUrl} onChange={e=>setNewImageUrl(e.target.value)} placeholder="https://... or data:image/..." className="flex-1 px-3 py-2 border rounded-lg text-sm" />
-											<button type="button" onClick={addImageUrl} className="px-3 py-2 border rounded-lg text-sm hover:bg-gray-50">Add</button>
-											<label className="px-3 py-2 border rounded-lg text-sm cursor-pointer hover:bg-gray-50">
-												Upload
-												<input type="file" accept="image/*" className="hidden" onChange={(e)=>{
-													const file = e.target.files?.[0]; if (!file) return;
-													const reader = new FileReader();
-													reader.onload = () => setForm(v=>({...v, images:[...(v.images||[]), String(reader.result||'')]}));
-													reader.readAsDataURL(file);
-												}} />
-											</label>
+											<button type="button" onClick={addImageUrl} className="px-3 py-2 border rounded-lg text-sm hover:bg-gray-50">Add URL</button>
+											<button type="button" onClick={()=>imageFileRef.current?.click()} className="px-3 py-2 border rounded-lg text-sm hover:bg-gray-50">Add</button>
+											<input ref={imageFileRef} type="file" accept="image/*" className="hidden" onChange={(e)=>{
+												const file = e.target.files?.[0]; if (!file) return;
+												const reader = new FileReader();
+												reader.onload = () => setForm(v=>({...v, images:[...(v.images||[]), String(reader.result||'')]}));
+												reader.readAsDataURL(file);
+											}} />
 										</div>
 										<div className="grid grid-cols-3 gap-2">
 											{(form.images||[]).map((url, idx)=> (
@@ -622,16 +622,14 @@ export default function AdminPage() {
 										<label className="block text-sm font-medium text-gray-700 mb-2">Video (optional)</label>
 										<div className="flex items-center space-x-2 mb-2">
 											<input value={newVideoUrl} onChange={e=>setNewVideoUrl(e.target.value)} placeholder="https://... or data:video/..." className="flex-1 px-3 py-2 border rounded-lg text-sm" />
-											<button type="button" onClick={addVideoUrl} className="px-3 py-2 border rounded-lg text-sm hover:bg-gray-50">Add</button>
-											<label className="px-3 py-2 border rounded-lg text-sm cursor-pointer hover:bg-gray-50">
-												Upload
-												<input type="file" accept="video/*" className="hidden" onChange={(e)=>{
-													const file = e.target.files?.[0]; if (!file) return;
-													const reader = new FileReader();
-													reader.onload = () => setForm(v=>({...v, videos:[...(v.videos||[]), String(reader.result||'')]}));
-													reader.readAsDataURL(file);
-												}} />
-											</label>
+											<button type="button" onClick={addVideoUrl} className="px-3 py-2 border rounded-lg text-sm hover:bg-gray-50">Add URL</button>
+											<button type="button" onClick={()=>videoFileRef.current?.click()} className="px-3 py-2 border rounded-lg text-sm hover:bg-gray-50">Add</button>
+											<input ref={videoFileRef} type="file" accept="video/*" className="hidden" onChange={(e)=>{
+												const file = e.target.files?.[0]; if (!file) return;
+												const reader = new FileReader();
+												reader.onload = () => setForm(v=>({...v, videos:[...(v.videos||[]), String(reader.result||'')]}));
+												reader.readAsDataURL(file);
+											}} />
 										</div>
 										{(form.videos||[]).map((url, idx)=> (
 											<div key={idx} className="mb-2">
