@@ -7,13 +7,11 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 
 import Checkout from './pages/Checkout.jsx'
 import Login from './pages/Login.jsx'
-import Signup from './pages/Signup.jsx'
 import CheckoutCallback from './pages/CheckoutCallback.jsx'
 
 const router = createBrowserRouter([
 	{ path: '/', element: <App /> },
 	{ path: '/login', element: <Login /> },
-	{ path: '/signup', element: <Signup /> },
 	{ path: '/admin', element: <Admin /> },
 	{ path: '/checkout', element: <Checkout /> },
 	{ path: '/checkout/callback', element: <CheckoutCallback /> },

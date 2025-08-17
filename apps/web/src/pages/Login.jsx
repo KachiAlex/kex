@@ -47,9 +47,6 @@ export default function LoginPage() {
 					<button disabled={loading} className="rounded-md bg-black text-white px-4 py-2 text-sm hover:opacity-90 transition w-full">Sign in</button>
 					{error && <div className="text-sm text-red-600">{error}</div>}
 				</form>
-				<div className="mt-4 text-sm text-gray-700">
-					Don't have an account? <Link className="text-purple-600 hover:underline" to="/signup">Sign up</Link>
-				</div>
 			</div>
 		</div>
 	);
