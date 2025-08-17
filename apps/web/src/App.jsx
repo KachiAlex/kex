@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./index.css";
 
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
+
 function Header({ cartCount, onSearch }) {
 	const inputRef = useRef(null);
 	const navigate = useNavigate();
@@ -160,19 +162,30 @@ function HeroSlideshow() {
 }
 
 function Categories() {
-	const items = [
-		{ icon: "📱", title: "Phones & Accessories", sub: "Latest smartphones & cases", delay: "stagger-1" },
-		{ icon: "💻", title: "Laptops & Accessories", sub: "High-performance computing", delay: "stagger-2" },
-		{ icon: "🕵️", title: "Spy Gadgets", sub: "Surveillance & security", delay: "stagger-3" },
-		{ icon: "⌚", title: "Smart Watches", sub: "Fitness & connectivity", delay: "stagger-4" }
+	const [cats, setCats] = useState([]);
+	useEffect(() => {
+		(async () => {
+			try {
+				const res = await fetch(`${API_BASE}/api/categories`);
+				const data = await res.json();
+				if (Array.isArray(data) && data.length) setCats(data);
+			} catch {}
+		})();
+	}, []);
+	const defaults = [
+		{ icon: "📱", title: "Phones & Accessories", sub: "Latest smartphones & cases" },
+		{ icon: "💻", title: "Laptops & Accessories", sub: "High-performance computing" },
+		{ icon: "🕵️", title: "Spy Gadgets", sub: "Surveillance & security" },
+		{ icon: "⌚", title: "Smart Watches", sub: "Fitness & connectivity" }
 	];
+	const items = cats.length ? cats.map((c, i) => ({ icon: "🛍️", title: c.name, sub: c.slug, delay: `stagger-${(i%4)+1}` })) : defaults.map((c,i)=>({...c, delay: `stagger-${(i%4)+1}`}));
 	return (
 		<section className="py-16">
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				<h2 className="text-3xl font-bold text-center mb-12 text-gray-800">Shop by Category</h2>
 				<div className="grid grid-cols-2 md:grid-cols-4 gap-6">
 					{items.map((c) => (
-						<div key={c.title} className={`category-card bg-white rounded-xl p-6 text-center shadow-lg cursor-pointer fade-in-up ${c.delay}`} onClick={() => alert(`Browsing ${c.title} - This would navigate to the category page!`)}>
+						<div key={c.title} className={`category-card bg-white rounded-xl p-6 text-center shadow-lg cursor-pointer fade-in-up ${c.delay}`} onClick={() => alert(`Browsing ${c.title}`)}>
 							<div className="text-4xl mb-4 float-animation">{c.icon}</div>
 							<h3 className="font-semibold text-gray-800">{c.title}</h3>
 							<p className="text-sm text-gray-600 mt-2">{c.sub}</p>

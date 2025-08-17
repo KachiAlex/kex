@@ -49,6 +49,7 @@ app.use('/api/products', require('./routes/products'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/tickets', require('./routes/tickets'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/categories', require('./routes/categories'));
 
 const PORT = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/kex';

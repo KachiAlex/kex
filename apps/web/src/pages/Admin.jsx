@@ -25,6 +25,8 @@ export default function AdminPage() {
 	const [profileForm, setProfileForm] = useState({ name: "", phone: "", password: "" });
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [menuAnchor, setMenuAnchor] = useState(null);
+	const [categories, setCategories] = useState([]);
+	const [newCategoryName, setNewCategoryName] = useState("");
 	const navigate = useNavigate();
 
 	useEffect(() => {
@@ -92,7 +94,7 @@ export default function AdminPage() {
 
 	useEffect(() => {
 		setLoading(true);
-		Promise.all([fetchProducts(), fetchOrders(), fetchMe()]).finally(() => setLoading(false));
+		Promise.all([fetchProducts(), fetchOrders(), fetchMe(), fetchCategories()]).finally(() => setLoading(false));
 	}, []);
 
 	useEffect(() => {
@@ -216,6 +218,30 @@ export default function AdminPage() {
 		localStorage.removeItem('kex_token');
 		localStorage.removeItem('kex_user');
 		navigate('/');
+	}
+
+	async function fetchCategories() {
+		try {
+			const res = await fetch(`${API_BASE}/api/categories`);
+			const data = await res.json();
+			if (Array.isArray(data)) setCategories(data);
+		} catch {}
+	}
+
+	async function createCategory() {
+		if (!newCategoryName.trim()) return;
+		setLoading(true);
+		setError("");
+		try {
+			const res = await fetch(`${API_BASE}/api/categories`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ name: newCategoryName.trim() }) });
+			if (!res.ok) throw new Error('create_failed');
+			const created = await res.json();
+			await fetchCategories();
+			setForm(v => ({ ...v, category: created.slug }));
+			setNewCategoryName("");
+		} catch (e) {
+			setError('Failed to create category');
+		} finally { setLoading(false); }
 	}
 
 	return (
@@ -519,12 +545,14 @@ export default function AdminPage() {
 										<label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
 										<select value={form.category} onChange={e=>setForm(v=>({...v,category:e.target.value}))} className="w-full px-3 py-2 border rounded-lg">
 											<option value="">Select Category</option>
-											<option value="smartphones">Smartphones</option>
-											<option value="laptops">Laptops</option>
-											<option value="spy-gadgets">Spy Gadgets</option>
-											<option value="watches">Smart Watches</option>
-											<option value="accessories">Accessories</option>
+											{categories.map(c => (
+												<option key={c._id} value={c.slug}>{c.name}</option>
+											))}
 										</select>
+										<div className="mt-2 flex items-center space-x-2">
+											<input value={newCategoryName} onChange={e=>setNewCategoryName(e.target.value)} placeholder="New category name" className="flex-1 px-3 py-2 border rounded-lg text-sm" />
+											<button type="button" onClick={createCategory} className="px-3 py-2 border rounded-lg text-sm hover:bg-gray-50">Add</button>
+										</div>
 									</div>
 								</div>
 								<div>
