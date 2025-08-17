@@ -241,22 +241,23 @@ export default function AdminPage() {
 
 				{/* Main */}
 				<div className="flex-1 flex flex-col overflow-hidden">
-					<header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
-						<div className="flex justify-between items-center">
-							<h1 className="text-2xl font-bold text-gray-800">{current.charAt(0).toUpperCase()+current.slice(1)}</h1>
-							<div className="flex items-center space-x-4">
-								<button className="relative p-2 text-gray-600 hover:text-gray-800">
-									<span className="text-xl">🔔</span>
-									<span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
-								</button>
-								<div className="flex items-center space-x-3">
-									<img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=64&h=64&q=80" alt="User" className="w-8 h-8 rounded-full"/>
-									<div className="text-right">
-										<div className="text-gray-700 font-medium">{me?.name || 'User'}</div>
-										<div className="text-xs text-gray-500">{me?.email || ''}</div>
+											<header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+							<div className="flex justify-between items-center">
+								<h1 className="text-2xl font-bold text-gray-800">{current.charAt(0).toUpperCase()+current.slice(1)}</h1>
+								<div className="flex items-center space-x-4">
+									<button className="relative p-2 text-gray-600 hover:text-gray-800">
+										<span className="text-xl">🔔</span>
+										<span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
+									</button>
+									<div className="flex items-center space-x-3">
+										<img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=64&h=64&q=80" alt="User" className="w-8 h-8 rounded-full"/>
+										<div className="text-right">
+											<div className="text-gray-700 font-medium">{me?.name || 'User'}</div>
+											<div className="text-xs text-gray-500">{me?.email || ''}</div>
+										</div>
+										<button onClick={()=>{ setProfileForm({ name: me?.name || '', phone: me?.phone || '', password: '' }); setShowProfileModal(true); }} className="px-3 py-1 border rounded-lg text-sm hover:bg-gray-50">Edit Profile</button>
+										<button onClick={signOut} className="px-3 py-1 bg-gray-800 text-white rounded-lg text-sm hover:opacity-90">Sign Out</button>
 									</div>
-									<button onClick={()=>{ setProfileForm({ name: me?.name || '', phone: me?.phone || '', password: '' }); setShowProfileModal(true); }} className="px-3 py-1 border rounded-lg text-sm hover:bg-gray-50">Edit Profile</button>
-									<button onClick={signOut} className="px-3 py-1 bg-gray-800 text-white rounded-lg text-sm hover:opacity-90">Sign Out</button>
 								</div>
 							</div>
 						</header>
