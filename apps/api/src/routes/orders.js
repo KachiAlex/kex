@@ -1,7 +1,9 @@
 const express = require('express');
 const { z } = require('zod');
+const crypto = require('crypto');
 const Order = require('../models/Order');
 const { makeRef, initPaystack, initFlutterwave, verifyPaystack, verifyFlutterwave } = require('../services/payments');
+const { requireAdmin, requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -69,13 +71,48 @@ router.get('/verify/:reference', async (req, res) => {
 		if (order.provider === 'flutterwave') {
 			const v = await verifyFlutterwave(reference);
 			const paid = v?.data?.status === 'successful';
-			if (paid) await Order.updateOne({ _id: order._id }, { status: 'paid' });
+			if (paid) await Order.updateOne({ _id: order._id }, { status: 'paid', escrowStatus: 'held' });
 			return res.json({ paid });
 		}
 
 		return res.status(400).json({ error: 'Unknown provider' });
 	} catch (e) {
 		return res.status(500).json({ error: 'Verification failed' });
+	}
+});
+
+// Flutterwave webhook to confirm payments server-to-server
+router.post('/webhooks/flutterwave', express.raw({ type: '*/*' }), async (req, res) => {
+	try {
+		const signature = req.headers['verif-hash'];
+		const secret = process.env.FLUTTERWAVE_WEBHOOK_SECRET || process.env.FLUTTERWAVE_SECRET_KEY;
+		if (!secret || signature !== secret) return res.status(401).end();
+		const payload = JSON.parse(req.body.toString('utf8'));
+		const txRef = payload?.data?.tx_ref || payload?.tx_ref;
+		const status = payload?.data?.status || payload?.status;
+		if (!txRef) return res.status(200).end();
+		const order = await Order.findOne({ reference: txRef });
+		if (!order) return res.status(200).end();
+		if (status === 'successful') {
+			await Order.updateOne({ _id: order._id }, { status: 'paid', escrowStatus: 'held' });
+		}
+		return res.status(200).end();
+	} catch {
+		return res.status(200).end();
+	}
+});
+
+// Admin releases escrow (settles to merchant)
+router.post('/escrow/:reference/release', requireAuth, requireAdmin, async (req, res) => {
+	try {
+		const { reference } = req.params;
+		const order = await Order.findOne({ reference });
+		if (!order) return res.status(404).json({ error: 'not_found' });
+		if (order.escrowStatus !== 'held') return res.status(400).json({ error: 'escrow_not_held' });
+		await Order.updateOne({ _id: order._id }, { escrowStatus: 'released', escrowReleasedAt: new Date() });
+		return res.json({ ok: true });
+	} catch {
+		return res.status(500).json({ error: 'failed_to_release' });
 	}
 });
 

@@ -23,6 +23,8 @@ const orderSchema = new mongoose.Schema(
 		authorizationUrl: { type: String },
 		providerReference: { type: String },
 		meta: { type: Object, default: {} },
+		escrowStatus: { type: String, enum: ['none', 'held', 'released'], default: 'none' },
+		escrowReleasedAt: { type: Date, default: null },
 	},
 	{ timestamps: true }
 );
