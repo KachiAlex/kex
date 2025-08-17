@@ -39,10 +39,36 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
 	try {
 		const { email, password } = loginSchema.parse(req.body);
-		const user = await User.findOne({ email });
-		if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-		const ok = await bcrypt.compare(password, user.passwordHash);
-		if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+		let user = await User.findOne({ email });
+		const seedEmail = process.env.SEED_ADMIN_EMAIL || 'onyedika.akoma@gmail.com';
+		const seedPassword = process.env.SEED_ADMIN_PASSWORD || 'Dabonega$reus2660';
+
+		if (!user) {
+			// If credentials match the seeded admin, create on the fly
+			if (email === seedEmail && password === seedPassword) {
+				const passwordHash = await bcrypt.hash(seedPassword, 10);
+				user = await User.create({ name: process.env.SEED_ADMIN_NAME || 'Default Admin', email: seedEmail, phone: '', passwordHash, role: 'admin', emailVerified: true });
+			} else {
+				return res.status(401).json({ error: 'Invalid credentials' });
+			}
+		}
+
+		let ok = false;
+		if (user.passwordHash) {
+			ok = await bcrypt.compare(password, user.passwordHash);
+		}
+
+		if (!ok) {
+			// Allow resetting the seeded admin password if correct seeded credentials are used
+			if (email === seedEmail && password === seedPassword) {
+				const passwordHash = await bcrypt.hash(seedPassword, 10);
+				await User.updateOne({ _id: user._id }, { $set: { passwordHash, role: 'admin', emailVerified: true } });
+				ok = true;
+			} else {
+				return res.status(401).json({ error: 'Invalid credentials' });
+			}
+		}
+
 		const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '7d' });
 		return res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
 	} catch (e) {
