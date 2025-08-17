@@ -97,7 +97,7 @@ router.patch('/me', requireAuth, async (req, res) => {
 			name: z.string().trim().min(1).optional(),
 			phone: z.string().trim().min(1).optional(),
 			password: z.string().min(1).optional(),
-			avatar: z.string().url().optional()
+			avatar: z.string().trim().min(1).optional()
 		});
 		const { name, phone, password, avatar } = schema.parse(req.body || {});
 		const update = {};

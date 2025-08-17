@@ -574,12 +574,21 @@ export default function AdminPage() {
 								<div>
 									<label className="block text-sm font-medium text-gray-700 mb-2">Avatar URL</label>
 									<input value={profileForm.avatar || ''} onChange={e=>setProfileForm(v=>({...v,avatar:e.target.value}))} placeholder="https://..." className="w-full px-3 py-2 border rounded-lg" />
-									{(profileForm.avatar || me?.avatar) && (
-										<div className="mt-2 flex items-center space-x-3">
+									<div className="mt-2 flex items-center space-x-3">
+										<label className="px-3 py-2 border rounded-lg text-sm cursor-pointer hover:bg-gray-50">
+											Upload image
+											<input type="file" accept="image/*" className="hidden" onChange={async (e)=>{
+												const file = e.target.files?.[0];
+												if (!file) return;
+												const reader = new FileReader();
+												reader.onload = () => setProfileForm(v=>({...v, avatar: String(reader.result||'')}));
+												reader.readAsDataURL(file);
+											}} />
+										</label>
+										{(profileForm.avatar || me?.avatar) && (
 											<img src={profileForm.avatar || me?.avatar} alt="Preview" className="w-10 h-10 rounded-full border"/>
-											<span className="text-xs text-gray-500">Preview</span>
-										</div>
-									)}
+										)}
+									</div>
 								</div>
 								<div>
 									<label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
