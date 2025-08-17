@@ -9,14 +9,12 @@ import Checkout from './pages/Checkout.jsx'
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
 import CheckoutCallback from './pages/CheckoutCallback.jsx'
-import Dashboard from './pages/Dashboard.jsx'
 
 const router = createBrowserRouter([
 	{ path: '/', element: <App /> },
 	{ path: '/login', element: <Login /> },
 	{ path: '/signup', element: <Signup /> },
 	{ path: '/admin', element: <Admin /> },
-	{ path: '/dashboard', element: <Dashboard /> },
 	{ path: '/checkout', element: <Checkout /> },
 	{ path: '/checkout/callback', element: <CheckoutCallback /> },
 ])

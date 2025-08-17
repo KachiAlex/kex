@@ -25,7 +25,7 @@ export default function LoginPage() {
 			if (!res.ok || !data?.token) throw new Error(data?.error || "login_failed");
 			localStorage.setItem("kex_token", data.token);
 			localStorage.setItem("kex_user", JSON.stringify(data.user));
-			navigate("/admin");
+			navigate(data?.user?.role === 'admin' ? "/admin" : "/");
 		} catch (e) {
 			setError("Invalid credentials");
 		} finally {

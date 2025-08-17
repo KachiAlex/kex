@@ -27,7 +27,7 @@ export default function SignupPage() {
 			if (!res.ok || !data?.token) throw new Error(data?.error || "signup_failed");
 			localStorage.setItem("kex_token", data.token);
 			localStorage.setItem("kex_user", JSON.stringify(data.user));
-			navigate("/dashboard");
+			navigate("/");
 		} catch (e) {
 			setError("Signup failed");
 		} finally {
