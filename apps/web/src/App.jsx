@@ -237,7 +237,7 @@ function FeaturedProducts({ onAddToCart }) {
 								<p className="text-gray-600 text-sm mb-4">{p.description || p.desc}</p>
 								<div className="flex justify-between items-center">
 									<span className="text-2xl font-bold text-purple-600 pulse-animation">₦{Number(p.price)?.toLocaleString?.() ?? p.price}</span>
-									<button type="button" className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 animated-button" onClick={(e) => { e.stopPropagation?.(); onAddToCart?.(p); }}>Add to Cart</button>
+									<button type="button" className="relative z-10 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 animated-button" onClick={(e) => { e.preventDefault?.(); e.stopPropagation?.(); onAddToCart?.(p); }}>Add to Cart</button>
 								</div>
 							</div>
 						</div>
@@ -316,6 +316,7 @@ function Footer() {
 
 export default function App() {
 	const [cartCount, setCartCount] = useState(0);
+	const [flash, setFlash] = useState("");
 
 	useEffect(() => {
 		try {
@@ -328,18 +329,25 @@ export default function App() {
 		try {
 			const saved = JSON.parse(localStorage.getItem('kex_cart') || '[]');
 			const cart = Array.isArray(saved) ? saved : [];
-			const entry = { id: product._id || product.id, name: product.name, price: product.price, img: product?.images?.[0] || null, qty: 1 };
+			const entry = { id: product._id || product.id, name: product.name, price: Number(product.price) || 0, img: product?.images?.[0] || null, qty: 1 };
 			cart.push(entry);
 			localStorage.setItem('kex_cart', JSON.stringify(cart));
 			setCartCount(cart.length);
+			setFlash('Added to cart');
+			setTimeout(() => setFlash(""), 1200);
 		} catch {
 			setCartCount(c => c + 1);
+			setFlash('Added to cart');
+			setTimeout(() => setFlash(""), 1200);
 		}
 	}
 
 	return (
 		<div className="bg-gray-50 min-h-screen">
 			<Header cartCount={cartCount} onSearch={(term) => term && alert(`Searching for: ${term} - This would show search results!`)} />
+			{flash && (
+				<div className="fixed top-4 right-4 bg-black text-white text-sm px-3 py-2 rounded shadow">{flash}</div>
+			)}
 			<HeroSlideshow />
 			<Categories />
 			<FeaturedProducts onAddToCart={handleAddToCart} />
