@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { isAuthenticated, signOut } from "../lib/auth";
-import { useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
 
@@ -16,27 +14,10 @@ export default function AdminPage() {
 	const [orders, setOrders] = useState([]);
 	const [stats, setStats] = useState({ totalOrders: 0, paidOrders: 0, totalRevenue: 0 });
 	const [form, setForm] = useState({ name: "", price: "", quantity: "", featured: false });
-	const navigate = useNavigate();
 
-	// Accept token/email from OAuth callback
 	useEffect(() => {
-		const url = new URL(window.location.href);
-		const token = url.searchParams.get('token');
-		const email = url.searchParams.get('email');
-		const name = url.searchParams.get('name');
-		if (token) {
-			localStorage.setItem('kex_token', token);
-			if (email) localStorage.setItem('kex_user', JSON.stringify({ email, name }));
-			window.history.replaceState({}, '', '/admin');
-		}
+		// noop: no auth redirect
 	}, []);
-
-	useEffect(() => {
-		if (!isAuthenticated()) {
-			navigate("/login");
-			return;
-		}
-	}, [navigate]);
 
 	async function fetchProducts() {
 		setError("");
@@ -52,10 +33,8 @@ export default function AdminPage() {
 	async function fetchOrders() {
 		setError("");
 		try {
-			const email = JSON.parse(localStorage.getItem("kex_user")||"{}")?.email;
-			const qs = email ? `?email=${encodeURIComponent(email)}` : "";
 			const [olist, sres] = await Promise.all([
-				fetch(`${API_BASE}/api/orders${qs}`),
+				fetch(`${API_BASE}/api/orders`),
 				fetch(`${API_BASE}/api/orders/stats`),
 			]);
 			const ordersJson = await olist.json();
@@ -141,18 +120,15 @@ export default function AdminPage() {
 			<div className="mx-auto max-w-6xl px-4 py-6">
 				<div className="flex items-center justify-between">
 					<h1 className="text-2xl font-semibold">Dashboard</h1>
-					<button onClick={()=>{signOut(); navigate('/login');}} className="text-sm text-red-600">Sign out</button>
 				</div>
 				<p className="text-sm text-gray-600">Overview of your store performance and orders.</p>
 
-				{/* Analytics cards */}
 				<div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
 					<div className="rounded-xl bg-gray-50 p-4 border"><div className="text-sm text-gray-600">Total revenue</div><div className="text-2xl font-semibold">₦{stats.totalRevenue?.toLocaleString?.() ?? 0}</div></div>
 					<div className="rounded-xl bg-gray-50 p-4 border"><div className="text-sm text-gray-600">Paid orders</div><div className="text-2xl font-semibold">{stats.paidOrders ?? 0}</div></div>
 					<div className="rounded-xl bg-gray-50 p-4 border"><div className="text-sm text-gray-600">All orders</div><div className="text-2xl font-semibold">{stats.totalOrders ?? 0}</div></div>
 				</div>
 
-				{/* Order history */}
 				<div className="mt-8">
 					<h2 className="text-lg font-semibold">Recent orders</h2>
 					<div className="mt-3 overflow-x-auto">
@@ -181,7 +157,6 @@ export default function AdminPage() {
 					</div>
 				</div>
 
-				{/* Product management (kept below) */}
 				<div className="mt-10">
 					<h2 className="text-lg font-semibold">Products</h2>
 					<form onSubmit={addProduct} className="mt-4 grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
