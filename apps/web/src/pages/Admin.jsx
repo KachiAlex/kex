@@ -576,7 +576,7 @@ export default function AdminPage() {
 									<label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
 									<textarea rows={4} value={form.description} onChange={e=>setForm(v=>({...v,description:e.target.value}))} className="w-full px-3 py-2 border rounded-lg"></textarea>
 								</div>
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+								<div className="space-y-6">
 									<div>
 										<label className="block text-sm font-medium text-gray-700 mb-2">Images</label>
 										<div className="flex items-center space-x-2 mb-2">
