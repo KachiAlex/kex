@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { z, ZodError } = require('zod');
 const User = require('../models/User');
-const { requireAdmin } = require('../middleware/auth');
+const { requireAdmin, requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -76,6 +76,41 @@ router.post('/login', async (req, res) => {
 			return res.status(400).json({ error: 'Invalid payload', details: e.errors });
 		}
 		return res.status(400).json({ error: 'Invalid payload' });
+	}
+});
+
+// Get current user profile
+router.get('/me', requireAuth, async (req, res) => {
+	try {
+		const user = await User.findById(req.user.id).select('_id name email phone role createdAt updatedAt');
+		if (!user) return res.status(404).json({ error: 'not_found' });
+		return res.json(user);
+	} catch {
+		return res.status(500).json({ error: 'failed_to_fetch_profile' });
+	}
+});
+
+// Update current user profile (name, phone, optional password)
+router.patch('/me', requireAuth, async (req, res) => {
+	try {
+		const schema = z.object({
+			name: z.string().trim().min(1).optional(),
+			phone: z.string().trim().min(1).optional(),
+			password: z.string().min(1).optional()
+		});
+		const { name, phone, password } = schema.parse(req.body || {});
+		const update = {};
+		if (typeof name === 'string') update.name = name;
+		if (typeof phone === 'string') update.phone = phone;
+		if (typeof password === 'string') update.passwordHash = await bcrypt.hash(password, 10);
+		const user = await User.findByIdAndUpdate(req.user.id, { $set: update }, { new: true, select: '_id name email phone role createdAt updatedAt' });
+		if (!user) return res.status(404).json({ error: 'not_found' });
+		return res.json(user);
+	} catch (e) {
+		if (e instanceof ZodError) {
+			return res.status(400).json({ error: 'Invalid payload', details: e.errors });
+		}
+		return res.status(500).json({ error: 'failed_to_update_profile' });
 	}
 });
 
