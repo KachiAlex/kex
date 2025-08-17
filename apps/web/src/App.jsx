@@ -45,7 +45,7 @@ function Header({ cartCount, onSearch }) {
 							</svg>
 							<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center pulse-animation">{cartCount}</span>
 						</button>
-						<a href="https://admin.kexecommerce.netlify.app" className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 animated-button">Admin</a>
+						<Link to="/admin" className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 animated-button">Admin</Link>
 					</div>
 				</div>
 			</div>
