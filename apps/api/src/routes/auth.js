@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { z } = require('zod');
+const { z, ZodError } = require('zod');
 const User = require('../models/User');
 
 const router = express.Router();
@@ -9,10 +9,10 @@ const router = express.Router();
 const signupSchema = z.object({
 	name: z.string().trim().min(1),
 	email: z.string().trim().email(),
-	password: z.string().min(6),
+	password: z.string().min(1),
 	phone: z.string().trim().min(1)
 });
-const loginSchema = z.object({ email: z.string().email(), password: z.string().min(6) });
+const loginSchema = z.object({ email: z.string().email(), password: z.string().min(1) });
 // OTP schema no longer used
 
 router.post('/signup', async (req, res) => {
@@ -26,6 +26,9 @@ router.post('/signup', async (req, res) => {
 		const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '7d' });
 		return res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
 	} catch (e) {
+		if (e instanceof ZodError) {
+			return res.status(400).json({ error: 'Invalid payload', details: e.errors });
+		}
 		return res.status(400).json({ error: 'Invalid payload' });
 	}
 });
@@ -42,6 +45,9 @@ router.post('/login', async (req, res) => {
 		const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '7d' });
 		return res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
 	} catch (e) {
+		if (e instanceof ZodError) {
+			return res.status(400).json({ error: 'Invalid payload', details: e.errors });
+		}
 		return res.status(400).json({ error: 'Invalid payload' });
 	}
 });
