@@ -23,6 +23,8 @@ export default function AdminPage() {
 	const [me, setMe] = useState(null);
 	const [showProfileModal, setShowProfileModal] = useState(false);
 	const [profileForm, setProfileForm] = useState({ name: "", phone: "", password: "" });
+	const [menuOpen, setMenuOpen] = useState(false);
+	const [menuAnchor, setMenuAnchor] = useState(null);
 	const navigate = useNavigate();
 
 	useEffect(() => {
@@ -38,6 +40,15 @@ export default function AdminPage() {
 			navigate('/login');
 		}
 	}, [navigate]);
+
+	useEffect(() => {
+		function onDocClick(e) {
+			if (!menuOpen) return;
+			if (menuAnchor && !menuAnchor.contains(e.target)) setMenuOpen(false);
+		}
+		document.addEventListener('click', onDocClick);
+		return () => document.removeEventListener('click', onDocClick);
+	}, [menuOpen, menuAnchor]);
 
 	async function fetchMe() {
 		try {
@@ -255,8 +266,15 @@ export default function AdminPage() {
 											<div className="text-gray-700 font-medium">{me?.name || 'User'}</div>
 											<div className="text-xs text-gray-500">{me?.email || ''}</div>
 										</div>
-										<button onClick={()=>{ setProfileForm({ name: me?.name || '', phone: me?.phone || '', password: '' }); setShowProfileModal(true); }} className="px-3 py-1 border rounded-lg text-sm hover:bg-gray-50">Edit Profile</button>
-										<button onClick={signOut} className="px-3 py-1 bg-gray-800 text-white rounded-lg text-sm hover:opacity-90">Sign Out</button>
+										<div ref={setMenuAnchor} className="relative">
+											<button onClick={()=>setMenuOpen(v=>!v)} className="px-2 py-1 border rounded-lg text-sm hover:bg-gray-50">⋮</button>
+											{menuOpen && (
+												<div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-md z-50">
+													<button onClick={()=>{ setMenuOpen(false); setProfileForm({ name: me?.name || '', phone: me?.phone || '', password: '' }); setShowProfileModal(true); }} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Edit Profile</button>
+													<button onClick={()=>{ setMenuOpen(false); signOut(); }} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Sign Out</button>
+												</div>
+											)}
+										</div>
 									</div>
 								</div>
 							</div>
