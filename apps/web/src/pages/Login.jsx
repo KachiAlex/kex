@@ -6,6 +6,7 @@ const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
 export default function LoginPage() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
+	const [showPassword, setShowPassword] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
 	const navigate = useNavigate();
@@ -39,7 +40,10 @@ export default function LoginPage() {
 				<p className="text-sm text-gray-600">Admin access requires a valid account.</p>
 				<form onSubmit={onSubmit} className="mt-6 space-y-4">
 					<input type="email" required className="w-full border rounded px-3 py-2" placeholder="Email" value={email} onChange={(e)=>setEmail(e.target.value)} />
-					<input type="password" required className="w-full border rounded px-3 py-2" placeholder="Password" value={password} onChange={(e)=>setPassword(e.target.value)} />
+					<div className="relative">
+						<input type={showPassword ? "text" : "password"} required className="w-full border rounded px-3 py-2 pr-12" placeholder="Password" value={password} onChange={(e)=>setPassword(e.target.value)} />
+						<button type="button" onClick={()=>setShowPassword(v=>!v)} className="absolute inset-y-0 right-2 my-auto text-sm text-gray-600 hover:text-black">{showPassword ? 'Hide' : 'Show'}</button>
+					</div>
 					<button disabled={loading} className="rounded-md bg-black text-white px-4 py-2 text-sm hover:opacity-90 transition w-full">Sign in</button>
 					{error && <div className="text-sm text-red-600">{error}</div>}
 				</form>
