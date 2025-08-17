@@ -53,10 +53,24 @@ app.use('/api/notifications', require('./routes/notifications'));
 const PORT = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/kex';
 
+async function seedAdmin() {
+	const bcrypt = require('bcrypt');
+	const User = require('./models/User');
+	const email = process.env.SEED_ADMIN_EMAIL || 'onyedika.akoma@gmail.com';
+	const password = process.env.SEED_ADMIN_PASSWORD || 'Dabonega$reus2660';
+	const name = process.env.SEED_ADMIN_NAME || 'Default Admin';
+	const existing = await User.findOne({ email });
+	if (existing) return;
+	const passwordHash = await bcrypt.hash(password, 10);
+	await User.create({ name, email, phone: '', passwordHash, role: 'admin', emailVerified: true });
+	console.log('Seeded default admin:', email);
+}
+
 async function start() {
 	try {
 		await mongoose.connect(MONGO_URI);
 		console.log('Connected to MongoDB');
+		await seedAdmin();
 		app.listen(PORT, () => console.log(`API listening on :${PORT}`));
 	} catch (err) {
 		console.error('Failed to start server', err);
