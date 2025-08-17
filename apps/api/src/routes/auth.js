@@ -1,16 +1,14 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const axios = require('axios');
 const { z } = require('zod');
 const User = require('../models/User');
-const { sendEmail, otpHtml } = require('../services/email');
 
 const router = express.Router();
 
 const signupSchema = z.object({ name: z.string().min(1), email: z.string().email(), password: z.string().min(6), phone: z.string().min(6) });
 const loginSchema = z.object({ email: z.string().email(), password: z.string().min(6) });
-const verifySchema = z.object({ email: z.string().email(), otp: z.string().min(4).max(6) });
+// OTP schema no longer used
 
 router.post('/signup', async (req, res) => {
 	try {
@@ -19,31 +17,15 @@ router.post('/signup', async (req, res) => {
 		if (existing) return res.status(409).json({ error: 'Email already in use' });
 		const passwordHash = await bcrypt.hash(password, 10);
 		const role = email.endsWith('@kex.local') ? 'admin' : 'customer';
-		const otp = String(Math.floor(100000 + Math.random() * 900000));
-		const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
-		await User.create({ name, email, phone, passwordHash, role, emailVerified: false, emailOtp: otp, emailOtpExpiresAt: otpExpires });
-		await sendEmail({ to: email, subject: 'KEX — Verify your email', html: otpHtml({ otp, name }) });
-		return res.json({ status: 'otp_sent', email });
+		const user = await User.create({ name, email, phone, passwordHash, role, emailVerified: true, emailOtp: null, emailOtpExpiresAt: null });
+		const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '7d' });
+		return res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
 	} catch (e) {
 		return res.status(400).json({ error: 'Invalid payload' });
 	}
 });
 
-router.post('/verify', async (req, res) => {
-	try {
-		const { email, otp } = verifySchema.parse(req.body);
-		const user = await User.findOne({ email });
-		if (!user || !user.emailOtp || !user.emailOtpExpiresAt) return res.status(400).json({ error: 'No OTP pending' });
-		if (user.emailOtp !== otp) return res.status(400).json({ error: 'Invalid OTP' });
-		if (user.emailOtpExpiresAt < new Date()) return res.status(400).json({ error: 'OTP expired' });
-		await User.updateOne({ _id: user._id }, { emailVerified: true, emailOtp: null, emailOtpExpiresAt: null });
-		const fresh = await User.findById(user._id);
-		const token = jwt.sign({ id: fresh._id, email: fresh.email, role: fresh.role }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '7d' });
-		return res.json({ token, user: { id: fresh._id, name: fresh.name, email: fresh.email, role: fresh.role } });
-	} catch (e) {
-		return res.status(400).json({ error: 'Invalid payload' });
-	}
-});
+// Removed /verify endpoint
 
 router.post('/login', async (req, res) => {
 	try {
@@ -52,64 +34,10 @@ router.post('/login', async (req, res) => {
 		if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 		const ok = await bcrypt.compare(password, user.passwordHash);
 		if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
-		if (!user.emailVerified) return res.status(403).json({ error: 'email_unverified' });
 		const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '7d' });
 		return res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
 	} catch (e) {
 		return res.status(400).json({ error: 'Invalid payload' });
-	}
-});
-
-// --- Google OAuth 2.0 ---
-function getServerBaseUrl() {
-	return process.env.SERVER_BASE_URL || process.env.RENDER_EXTERNAL_URL || '';
-}
-
-router.get('/google', (req, res) => {
-	const clientId = process.env.GOOGLE_CLIENT_ID;
-	const redirectUri = `${getServerBaseUrl()}/api/auth/google/callback`;
-	const scope = encodeURIComponent('openid email profile');
-	const state = encodeURIComponent(req.query.state || 'login');
-	if (!clientId || !redirectUri) return res.status(500).send('Google OAuth not configured');
-	const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${state}`;
-	return res.redirect(url);
-});
-
-router.get('/google/callback', async (req, res) => {
-	try {
-		const code = req.query.code;
-		if (!code) return res.status(400).send('Missing code');
-		const clientId = process.env.GOOGLE_CLIENT_ID;
-		const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-		const redirectUri = `${getServerBaseUrl()}/api/auth/google/callback`;
-		const clientBase = process.env.CLIENT_BASE_URL || 'http://localhost:5173';
-		if (!clientId || !clientSecret || !redirectUri) return res.status(500).send('Google OAuth not configured');
-
-		const tokenRes = await axios.post('https://oauth2.googleapis.com/token', new URLSearchParams({
-			code,
-			client_id: clientId,
-			client_secret: clientSecret,
-			redirect_uri: redirectUri,
-			grant_type: 'authorization_code'
-		}).toString(), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
-
-		const accessToken = tokenRes.data?.access_token;
-		if (!accessToken) return res.status(401).send('Token exchange failed');
-
-		const infoRes = await axios.get('https://openidconnect.googleapis.com/v1/userinfo', { headers: { Authorization: `Bearer ${accessToken}` } });
-		const { email, name } = infoRes.data || {};
-		if (!email) return res.status(400).send('No email from Google');
-
-		let user = await User.findOne({ email });
-		if (!user) {
-			user = await User.create({ name: name || '', email, passwordHash: '', role: email.endsWith('@kex.local') ? 'admin' : 'customer', emailVerified: true });
-		}
-
-		const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET || 'dev_secret', { expiresIn: '7d' });
-		const redirect = `${clientBase}/admin?token=${encodeURIComponent(token)}&email=${encodeURIComponent(user.email)}&name=${encodeURIComponent(user.name || '')}`;
-		return res.redirect(redirect);
-	} catch (e) {
-		return res.status(500).send('Google auth failed');
 	}
 });
 

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
-const GOOGLE_OAUTH_URL = import.meta.env.VITE_GOOGLE_OAUTH_URL || `${API_BASE}/api/auth/google`;
 
 export default function LoginPage() {
 	const [email, setEmail] = useState("");
@@ -33,10 +32,6 @@ export default function LoginPage() {
 		}
 	}
 
-	function onGoogle() {
-		window.location.href = GOOGLE_OAUTH_URL;
-	}
-
 	return (
 		<div className="min-h-screen bg-white">
 			<div className="mx-auto max-w-sm px-4 py-10">
@@ -46,9 +41,6 @@ export default function LoginPage() {
 					<input type="email" required className="w-full border rounded px-3 py-2" placeholder="Email" value={email} onChange={(e)=>setEmail(e.target.value)} />
 					<input type="password" required className="w-full border rounded px-3 py-2" placeholder="Password" value={password} onChange={(e)=>setPassword(e.target.value)} />
 					<button disabled={loading} className="rounded-md bg-black text-white px-4 py-2 text-sm hover:opacity-90 transition w-full">Sign in</button>
-					<button type="button" onClick={onGoogle} className="rounded-md border px-4 py-2 text-sm w-full hover:bg-gray-50 transition flex items-center justify-center gap-2">
-						<span>Continue with Google</span>
-					</button>
 					{error && <div className="text-sm text-red-600">{error}</div>}
 				</form>
 				<div className="mt-4 text-sm text-gray-700">
