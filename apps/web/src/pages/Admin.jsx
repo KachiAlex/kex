@@ -29,6 +29,13 @@ export default function AdminPage() {
 	const [menuAnchor, setMenuAnchor] = useState(null);
 	const [categories, setCategories] = useState([]);
 	const [newCategoryName, setNewCategoryName] = useState("");
+	const defaultCategories = [
+		{ _id: 'def-1', name: 'Smartphones', slug: 'smartphones' },
+		{ _id: 'def-2', name: 'Laptops', slug: 'laptops' },
+		{ _id: 'def-3', name: 'Spy Gadgets', slug: 'spy-gadgets' },
+		{ _id: 'def-4', name: 'Smart Watches', slug: 'watches' },
+		{ _id: 'def-5', name: 'Accessories', slug: 'accessories' },
+	];
 	const navigate = useNavigate();
 
 	useEffect(() => {
@@ -239,7 +246,17 @@ export default function AdminPage() {
 		setError("");
 		try {
 			const res = await fetch(`${API_BASE}/api/categories`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ name: newCategoryName.trim() }) });
-			if (!res.ok) throw new Error('create_failed');
+			if (!res.ok) {
+				if (res.status === 409) {
+					await fetchCategories();
+					const nameLc = newCategoryName.trim().toLowerCase();
+					const match = (categories.length? categories : defaultCategories).find(c => c.name.toLowerCase() === nameLc || c.slug === nameLc);
+					if (match) setForm(v => ({ ...v, category: match.slug }));
+					setNewCategoryName("");
+					return;
+				}
+				throw new Error('create_failed');
+			}
 			const created = await res.json();
 			await fetchCategories();
 			setForm(v => ({ ...v, category: created.slug }));
@@ -562,7 +579,7 @@ export default function AdminPage() {
 										<label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
 										<select value={form.category} onChange={e=>setForm(v=>({...v,category:e.target.value}))} className="w-full px-3 py-2 border rounded-lg">
 											<option value="">Select Category</option>
-											{categories.map(c => (
+											{(categories.length ? categories : defaultCategories).map(c => (
 												<option key={c._id} value={c.slug}>{c.name}</option>
 											))}
 										</select>
