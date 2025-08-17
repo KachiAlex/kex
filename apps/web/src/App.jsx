@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./index.css";
 
 function Header({ cartCount, onSearch }) {
 	const inputRef = useRef(null);
+	const navigate = useNavigate();
 	return (
 		<header className="bg-white shadow-lg sticky top-0 z-50">
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -45,7 +46,18 @@ function Header({ cartCount, onSearch }) {
 							</svg>
 							<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center pulse-animation">{cartCount}</span>
 						</button>
-						<Link to="/admin" className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 animated-button">Admin</Link>
+						<button
+							onClick={() => {
+								try {
+									const user = JSON.parse(localStorage.getItem('kex_user') || 'null');
+									const token = localStorage.getItem('kex_token');
+									if (!token || user?.role !== 'admin') navigate('/login'); else navigate('/admin');
+								} catch { navigate('/login'); }
+							}}
+							className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 animated-button"
+						>
+							Admin
+						</button>
 					</div>
 				</div>
 			</div>
