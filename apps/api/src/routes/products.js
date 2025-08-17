@@ -7,13 +7,20 @@ const router = express.Router();
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 // validation schema
+const dataUrlOrUrl = z.string().refine((v)=>{
+	if (!v) return false;
+	if (v.startsWith('data:')) return true;
+	try { new URL(v); return true; } catch { return false; }
+}, { message: 'invalid_url' });
+
 const productSchema = z.object({
 	name: z.string().min(1),
 	description: z.string().optional().default(''),
 	price: z.number().nonnegative(),
 	quantity: z.number().int().nonnegative(),
 	category: z.string().optional().default('general'),
-	images: z.array(z.string().url()).optional().default([]),
+	images: z.array(dataUrlOrUrl).optional().default([]),
+	videos: z.array(dataUrlOrUrl).optional().default([]),
 	featured: z.boolean().optional().default(false),
 });
 

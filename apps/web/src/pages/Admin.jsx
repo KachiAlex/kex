@@ -18,7 +18,9 @@ export default function AdminPage() {
 	const [items, setItems] = useState([]);
 	const [orders, setOrders] = useState([]);
 	const [stats, setStats] = useState({ totalOrders: 0, paidOrders: 0, totalRevenue: 0 });
-	const [form, setForm] = useState({ name: "", price: "", quantity: "", featured: false, category: "", description: "" });
+	const [form, setForm] = useState({ name: "", price: "", quantity: "", featured: false, category: "", description: "", images: [], videos: [] });
+	const [newImageUrl, setNewImageUrl] = useState("");
+	const [newVideoUrl, setNewVideoUrl] = useState("");
 	const [showAddModal, setShowAddModal] = useState(false);
 	const [me, setMe] = useState(null);
 	const [showProfileModal, setShowProfileModal] = useState(false);
@@ -140,7 +142,8 @@ export default function AdminPage() {
 				price: Number(form.price),
 				quantity: Number(form.quantity),
 				featured: Boolean(form.featured),
-				images: [],
+				images: Array.isArray(form.images) ? form.images : [],
+				videos: Array.isArray(form.videos) ? form.videos : [],
 				description: form.description || "",
 				category: form.category || "general",
 			};
@@ -150,7 +153,9 @@ export default function AdminPage() {
 				body: JSON.stringify(payload)
 			});
 			if (!res.ok) throw new Error("create_failed");
-			setForm({ name: "", price: "", quantity: "", featured: false, category: "", description: "" });
+			setForm({ name: "", price: "", quantity: "", featured: false, category: "", description: "", images: [], videos: [] });
+			setNewImageUrl("");
+			setNewVideoUrl("");
 			setShowAddModal(false);
 			await fetchProducts();
 		} catch (e) {
@@ -242,6 +247,18 @@ export default function AdminPage() {
 		} catch (e) {
 			setError('Failed to create category');
 		} finally { setLoading(false); }
+	}
+
+	function addImageUrl() {
+		if (!newImageUrl.trim()) return;
+		setForm(v => ({ ...v, images: [...(v.images||[]), newImageUrl.trim()] }));
+		setNewImageUrl("");
+	}
+
+	function addVideoUrl() {
+		if (!newVideoUrl.trim()) return;
+		setForm(v => ({ ...v, videos: [...(v.videos||[]), newVideoUrl.trim()] }));
+		setNewVideoUrl("");
 	}
 
 	return (
@@ -558,6 +575,54 @@ export default function AdminPage() {
 								<div>
 									<label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
 									<textarea rows={4} value={form.description} onChange={e=>setForm(v=>({...v,description:e.target.value}))} className="w-full px-3 py-2 border rounded-lg"></textarea>
+								</div>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+									<div>
+										<label className="block text-sm font-medium text-gray-700 mb-2">Images</label>
+										<div className="flex items-center space-x-2 mb-2">
+											<input value={newImageUrl} onChange={e=>setNewImageUrl(e.target.value)} placeholder="https://... or data:image/..." className="flex-1 px-3 py-2 border rounded-lg text-sm" />
+											<button type="button" onClick={addImageUrl} className="px-3 py-2 border rounded-lg text-sm hover:bg-gray-50">Add</button>
+											<label className="px-3 py-2 border rounded-lg text-sm cursor-pointer hover:bg-gray-50">
+												Upload
+												<input type="file" accept="image/*" className="hidden" onChange={(e)=>{
+													const file = e.target.files?.[0]; if (!file) return;
+													const reader = new FileReader();
+													reader.onload = () => setForm(v=>({...v, images:[...(v.images||[]), String(reader.result||'')]}));
+													reader.readAsDataURL(file);
+												}} />
+											</label>
+										</div>
+										<div className="grid grid-cols-3 gap-2">
+											{(form.images||[]).map((url, idx)=> (
+												<div key={idx} className="relative">
+													<img src={url} alt="preview" className="w-full h-20 object-cover rounded border" />
+													<button type="button" onClick={()=>setForm(v=>({...v, images: v.images.filter((_,i)=>i!==idx)}))} className="absolute -top-2 -right-2 bg-white border rounded-full w-6 h-6 text-xs">×</button>
+												</div>
+											))}
+										</div>
+									</div>
+									<div>
+										<label className="block text-sm font-medium text-gray-700 mb-2">Video (optional)</label>
+										<div className="flex items-center space-x-2 mb-2">
+											<input value={newVideoUrl} onChange={e=>setNewVideoUrl(e.target.value)} placeholder="https://... or data:video/..." className="flex-1 px-3 py-2 border rounded-lg text-sm" />
+											<button type="button" onClick={addVideoUrl} className="px-3 py-2 border rounded-lg text-sm hover:bg-gray-50">Add</button>
+											<label className="px-3 py-2 border rounded-lg text-sm cursor-pointer hover:bg-gray-50">
+												Upload
+												<input type="file" accept="video/*" className="hidden" onChange={(e)=>{
+													const file = e.target.files?.[0]; if (!file) return;
+													const reader = new FileReader();
+													reader.onload = () => setForm(v=>({...v, videos:[...(v.videos||[]), String(reader.result||'')]}));
+													reader.readAsDataURL(file);
+												}} />
+											</label>
+										</div>
+										{(form.videos||[]).map((url, idx)=> (
+											<div key={idx} className="mb-2">
+												<video src={url} controls className="w-full h-40 bg-black rounded" />
+												<div className="text-right mt-1"><button type="button" onClick={()=>setForm(v=>({...v, videos: v.videos.filter((_,i)=>i!==idx)}))} className="px-2 py-1 text-xs border rounded">Remove</button></div>
+											</div>
+										))}
+									</div>
 								</div>
 								<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 									<div>
