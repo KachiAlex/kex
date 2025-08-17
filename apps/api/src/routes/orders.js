@@ -91,10 +91,13 @@ router.get('/', async (req, res) => {
 	}
 });
 
-// Basic analytics
-router.get('/stats', async (_req, res) => {
+// Basic analytics (optionally filter by email)
+router.get('/stats', async (req, res) => {
 	try {
+		const { email } = req.query;
+		const match = email ? { customerEmail: email } : {};
 		const [summary] = await Order.aggregate([
+			{ $match: match },
 			{ $group: {
 				_id: null,
 				totalOrders: { $sum: 1 },
@@ -105,6 +108,35 @@ router.get('/stats', async (_req, res) => {
 		return res.json(summary || { totalOrders: 0, paidOrders: 0, totalRevenue: 0 });
 	} catch (e) {
 		return res.status(500).json({ error: 'Failed to fetch stats' });
+	}
+});
+
+// Frequently purchased products (optionally filter by email)
+router.get('/frequent', async (req, res) => {
+	try {
+		const { email, limit } = req.query;
+		const lim = Math.max(1, Math.min(parseInt(limit || '5', 10) || 5, 20));
+		const pipeline = [
+			...(email ? [{ $match: { customerEmail: email } }] : []),
+			{ $match: { status: 'paid' } },
+			{ $unwind: '$items' },
+			{ $group: {
+				_id: { productId: '$items.productId', name: '$items.name' },
+				totalQuantity: { $sum: '$items.quantity' },
+				totalAmount: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
+			} },
+			{ $sort: { totalQuantity: -1 } },
+			{ $limit: lim }
+		];
+		const results = await Order.aggregate(pipeline);
+		return res.json(results.map(r => ({
+			productId: r._id.productId || null,
+			name: r._id.name,
+			quantity: r.totalQuantity,
+			amount: r.totalAmount
+		})));
+	} catch (e) {
+		return res.status(500).json({ error: 'Failed to fetch frequent products' });
 	}
 });
 
