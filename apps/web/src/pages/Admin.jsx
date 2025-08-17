@@ -199,6 +199,7 @@ export default function AdminPage() {
 				...(profileForm.name ? { name: profileForm.name } : {}),
 				...(profileForm.phone ? { phone: profileForm.phone } : {}),
 				...(profileForm.password ? { password: profileForm.password } : {}),
+				...(profileForm.avatar ? { avatar: profileForm.avatar } : {}),
 			};
 			const res = await fetch(`${API_BASE}/api/auth/me`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(payload) });
 			if (!res.ok) throw new Error('update_failed');
@@ -261,7 +262,7 @@ export default function AdminPage() {
 										<span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
 									</button>
 									<div className="flex items-center space-x-3">
-										<img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=64&h=64&q=80" alt="User" className="w-8 h-8 rounded-full"/>
+										<img src={me?.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=64&h=64&q=80"} alt="User" className="w-8 h-8 rounded-full"/>
 										<div className="text-right">
 											<div className="text-gray-700 font-medium">{me?.name || 'User'}</div>
 											<div className="text-xs text-gray-500">{me?.email || ''}</div>
@@ -269,8 +270,8 @@ export default function AdminPage() {
 										<div ref={setMenuAnchor} className="relative">
 											<button onClick={()=>setMenuOpen(v=>!v)} className="px-2 py-1 border rounded-lg text-sm hover:bg-gray-50">⋮</button>
 											{menuOpen && (
-												<div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-md z-50">
-													<button onClick={()=>{ setMenuOpen(false); setProfileForm({ name: me?.name || '', phone: me?.phone || '', password: '' }); setShowProfileModal(true); }} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Edit Profile</button>
+												<div className="absolute right-0 mt-2 w-56 bg-white border rounded-lg shadow-md z-50">
+													<button onClick={()=>{ setMenuOpen(false); setProfileForm({ name: me?.name || '', phone: me?.phone || '', password: '', avatar: me?.avatar || '' }); setShowProfileModal(true); }} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Edit Profile</button>
 													<button onClick={()=>{ setMenuOpen(false); signOut(); }} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Sign Out</button>
 												</div>
 											)}
@@ -569,6 +570,16 @@ export default function AdminPage() {
 								<div>
 									<label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
 									<input value={profileForm.phone} onChange={e=>setProfileForm(v=>({...v,phone:e.target.value}))} className="w-full px-3 py-2 border rounded-lg" />
+								</div>
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-2">Avatar URL</label>
+									<input value={profileForm.avatar || ''} onChange={e=>setProfileForm(v=>({...v,avatar:e.target.value}))} placeholder="https://..." className="w-full px-3 py-2 border rounded-lg" />
+									{(profileForm.avatar || me?.avatar) && (
+										<div className="mt-2 flex items-center space-x-3">
+											<img src={profileForm.avatar || me?.avatar} alt="Preview" className="w-10 h-10 rounded-full border"/>
+											<span className="text-xs text-gray-500">Preview</span>
+										</div>
+									)}
 								</div>
 								<div>
 									<label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>

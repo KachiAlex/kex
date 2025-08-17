@@ -82,7 +82,7 @@ router.post('/login', async (req, res) => {
 // Get current user profile
 router.get('/me', requireAuth, async (req, res) => {
 	try {
-		const user = await User.findById(req.user.id).select('_id name email phone role createdAt updatedAt');
+		const user = await User.findById(req.user.id).select('_id name email phone avatar role createdAt updatedAt');
 		if (!user) return res.status(404).json({ error: 'not_found' });
 		return res.json(user);
 	} catch {
@@ -96,14 +96,16 @@ router.patch('/me', requireAuth, async (req, res) => {
 		const schema = z.object({
 			name: z.string().trim().min(1).optional(),
 			phone: z.string().trim().min(1).optional(),
-			password: z.string().min(1).optional()
+			password: z.string().min(1).optional(),
+			avatar: z.string().url().optional()
 		});
-		const { name, phone, password } = schema.parse(req.body || {});
+		const { name, phone, password, avatar } = schema.parse(req.body || {});
 		const update = {};
 		if (typeof name === 'string') update.name = name;
 		if (typeof phone === 'string') update.phone = phone;
+		if (typeof avatar === 'string') update.avatar = avatar;
 		if (typeof password === 'string') update.passwordHash = await bcrypt.hash(password, 10);
-		const user = await User.findByIdAndUpdate(req.user.id, { $set: update }, { new: true, select: '_id name email phone role createdAt updatedAt' });
+		const user = await User.findByIdAndUpdate(req.user.id, { $set: update }, { new: true, select: '_id name email phone avatar role createdAt updatedAt' });
 		if (!user) return res.status(404).json({ error: 'not_found' });
 		return res.json(user);
 	} catch (e) {
