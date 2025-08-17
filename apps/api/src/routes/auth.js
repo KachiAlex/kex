@@ -6,7 +6,12 @@ const User = require('../models/User');
 
 const router = express.Router();
 
-const signupSchema = z.object({ name: z.string().min(1), email: z.string().email(), password: z.string().min(6), phone: z.string().min(6) });
+const signupSchema = z.object({
+	name: z.string().trim().min(1),
+	email: z.string().trim().email(),
+	password: z.string().min(6),
+	phone: z.string().trim().min(1)
+});
 const loginSchema = z.object({ email: z.string().email(), password: z.string().min(6) });
 // OTP schema no longer used
 
