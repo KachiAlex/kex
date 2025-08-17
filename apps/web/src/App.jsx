@@ -198,12 +198,23 @@ function Categories() {
 }
 
 function FeaturedProducts({ onAddToCart }) {
-	const products = [
-		{ id: "p1", icon: "📱", name: "Premium Smartphone X1", desc: "Latest flagship with AI camera", price: "₦899,000", color: "from-blue-400 to-purple-500" },
-		{ id: "p2", icon: "💻", name: "UltraBook Pro 15\"", desc: "High-performance laptop", price: "₦1,299,000", color: "from-gray-400 to-gray-600" },
-		{ id: "p3", icon: "🕵️", name: "Mini Spy Camera", desc: "Discreet HD recording", price: "₦199,000", color: "from-red-400 to-pink-500" },
-		{ id: "p4", icon: "⌚", name: "Smart Watch Elite", desc: "Health & fitness tracking", price: "₦349,000", color: "from-green-400 to-blue-500" }
+	const [items, setItems] = useState([]);
+	const defaults = [
+		{ id: "p1", icon: "📱", name: "Premium Smartphone X1", desc: "Latest flagship with AI camera", price: 899000, color: "from-blue-400 to-purple-500" },
+		{ id: "p2", icon: "💻", name: "UltraBook Pro 15\"", desc: "High-performance laptop", price: 1299000, color: "from-gray-400 to-gray-600" },
+		{ id: "p3", icon: "🕵️", name: "Mini Spy Camera", desc: "Discreet HD recording", price: 199000, color: "from-red-400 to-pink-500" },
+		{ id: "p4", icon: "⌚", name: "Smart Watch Elite", desc: "Health & fitness tracking", price: 349000, color: "from-green-400 to-blue-500" }
 	];
+	useEffect(() => {
+		(async () => {
+			try {
+				const res = await fetch(`${API_BASE}/api/products/featured`);
+				const data = await res.json();
+				if (Array.isArray(data) && data.length) setItems(data);
+			} catch {}
+		})();
+	}, []);
+	const list = items.length ? items : defaults;
 	return (
 		<section className="py-16 bg-white">
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -212,17 +223,21 @@ function FeaturedProducts({ onAddToCart }) {
 					<button className="text-purple-600 font-semibold hover:text-purple-700">View All →</button>
 				</div>
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-					{products.map((p, i) => (
-						<div key={p.id} className={`card-hover bg-gray-50 rounded-xl overflow-hidden shadow-lg ${i < 2 ? "slide-in-left" : "slide-in-right"} stagger-${(i % 4) + 1}`}>
-							<div className={`h-48 bg-gradient-to-br ${p.color} flex items-center justify-center`}>
-								<div className={`${p.icon === "📱" ? "rotate-animation" : p.icon === "💻" ? "float-animation" : p.icon === "🕵️" ? "bounce-animation" : "pulse-animation"} text-6xl`}>{p.icon}</div>
+					{list.map((p, i) => (
+						<div key={p._id || p.id} className={`card-hover bg-gray-50 rounded-xl overflow-hidden shadow-lg ${i < 2 ? "slide-in-left" : "slide-in-right"} stagger-${(i % 4) + 1}`}>
+							<div className={`h-48 bg-gradient-to-br ${p.color || 'from-purple-200 to-purple-400'} flex items-center justify-center`}>
+								{p?.images?.length ? (
+									<img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
+								) : (
+									<div className={`${p.icon === "📱" ? "rotate-animation" : p.icon === "💻" ? "float-animation" : p.icon === "🕵️" ? "bounce-animation" : "pulse-animation"} text-6xl`}>{p.icon || "🛍️"}</div>
+								)}
 							</div>
 							<div className="p-6">
 								<h3 className="font-semibold text-lg mb-2">{p.name}</h3>
-								<p className="text-gray-600 text-sm mb-4">{p.desc}</p>
+								<p className="text-gray-600 text-sm mb-4">{p.description || p.desc}</p>
 								<div className="flex justify-between items-center">
-									<span className="text-2xl font-bold text-purple-600 pulse-animation">{p.price}</span>
-									<button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 animated-button" onClick={() => onAddToCart?.(p.id)}>Add to Cart</button>
+									<span className="text-2xl font-bold text-purple-600 pulse-animation">₦{Number(p.price)?.toLocaleString?.() ?? p.price}</span>
+									<button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 animated-button" onClick={() => onAddToCart?.(p._id || p.id)}>Add to Cart</button>
 								</div>
 							</div>
 						</div>
