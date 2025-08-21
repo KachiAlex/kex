@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import "./index.css";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
 
 function Header({ cartCount, onSearch }) {
 	const inputRef = useRef(null);
-	const navigate = useNavigate();
 	return (
 		<header className="bg-white shadow-lg sticky top-0 z-50">
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -18,6 +16,8 @@ function Header({ cartCount, onSearch }) {
 					<div className="flex-1 max-w-lg mx-8">
 						<div className="relative">
 							<input
+								id="search"
+								name="search"
 								type="text"
 								placeholder="Search for gadgets, phones, laptops..."
 								className="w-full px-4 py-2 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -42,19 +42,28 @@ function Header({ cartCount, onSearch }) {
 						<a href="#" className="text-gray-700 hover:text-purple-600 font-medium">Support</a>
 					</nav>
 					<div className="flex items-center space-x-4">
-						<button className="relative p-2 text-gray-700 hover:text-purple-600 float-animation" aria-label="Cart">
+						{/* Cart Link */}
+						<a 
+							href="/checkout"
+							className="relative p-2 text-gray-700 hover:text-purple-600 transition-colors duration-200 cursor-pointer"
+							title="View Cart"
+						>
 							<svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
 							</svg>
-							<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center pulse-animation">{cartCount}</span>
-						</button>
+							{cartCount > 0 && (
+								<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+									{cartCount}
+								</span>
+							)}
+						</a>
 						<button
 							onClick={() => {
 								try {
 									const user = JSON.parse(localStorage.getItem('kex_user') || 'null');
 									const token = localStorage.getItem('kex_token');
-									if (!token || user?.role !== 'admin') navigate('/login'); else navigate('/admin');
-								} catch { navigate('/login'); }
+									if (!token || user?.role !== 'admin') window.location.href = '/login'; else window.location.href = '/admin';
+								} catch { window.location.href = '/login'; }
 							}}
 							className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 animated-button"
 						>
@@ -318,33 +327,64 @@ export default function App() {
 	const [cartCount, setCartCount] = useState(0);
 	const [flash, setFlash] = useState("");
 
+	// Load cart count on component mount
 	useEffect(() => {
-		try {
-			const saved = JSON.parse(localStorage.getItem('kex_cart') || '[]');
-			if (Array.isArray(saved)) setCartCount(saved.length);
-		} catch {}
+		loadCartCount();
 	}, []);
 
+	// Function to load cart count from localStorage
+	function loadCartCount() {
+		try {
+			const cart = JSON.parse(localStorage.getItem('kex_cart') || '[]');
+			setCartCount(Array.isArray(cart) ? cart.length : 0);
+		} catch (error) {
+			console.error('Error loading cart:', error);
+			setCartCount(0);
+		}
+	}
+
+	// Function to add item to cart
 	function handleAddToCart(product) {
 		try {
-			const saved = JSON.parse(localStorage.getItem('kex_cart') || '[]');
-			const cart = Array.isArray(saved) ? saved : [];
-			const entry = { id: product._id || product.id, name: product.name, price: Number(product.price) || 0, img: product?.images?.[0] || null, qty: 1 };
-			cart.push(entry);
-			localStorage.setItem('kex_cart', JSON.stringify(cart));
-			setCartCount(cart.length);
+			const cart = JSON.parse(localStorage.getItem('kex_cart') || '[]');
+			const newCart = Array.isArray(cart) ? cart : [];
+			
+			// Check if item already exists
+			const existingIndex = newCart.findIndex(item => item.id === (product._id || product.id));
+			
+			if (existingIndex >= 0) {
+				// Update quantity if item exists
+				newCart[existingIndex].qty = (newCart[existingIndex].qty || 1) + 1;
+			} else {
+				// Add new item
+				newCart.push({
+					id: product._id || product.id,
+					name: product.name,
+					price: Number(product.price) || 0,
+					img: product?.images?.[0] || null,
+					qty: 1
+				});
+			}
+			
+			localStorage.setItem('kex_cart', JSON.stringify(newCart));
+			setCartCount(newCart.length);
 			setFlash('Added to cart');
 			setTimeout(() => setFlash(""), 1200);
-		} catch {
-			setCartCount(c => c + 1);
-			setFlash('Added to cart');
+		} catch (error) {
+			console.error('Error adding to cart:', error);
+			setFlash('Error adding to cart');
 			setTimeout(() => setFlash(""), 1200);
 		}
 	}
 
+
+
 	return (
 		<div className="bg-gray-50 min-h-screen">
-			<Header cartCount={cartCount} onSearch={(term) => term && alert(`Searching for: ${term} - This would show search results!`)} />
+			<Header 
+				cartCount={cartCount} 
+				onSearch={(term) => term && alert(`Searching for: ${term} - This would show search results!`)}
+			/>
 			{flash && (
 				<div className="fixed top-4 right-4 bg-black text-white text-sm px-3 py-2 rounded shadow">{flash}</div>
 			)}
