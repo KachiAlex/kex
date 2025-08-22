@@ -3,7 +3,14 @@ import { useState, useEffect } from "react";
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
 
 export default function CheckoutPage() {
+	const [firstName, setFirstName] = useState("");
+	const [lastName, setLastName] = useState("");
+	const [phone, setPhone] = useState("");
 	const [email, setEmail] = useState("");
+	const [address, setAddress] = useState("");
+	const [city, setCity] = useState("");
+	const [state, setState] = useState("");
+	const [postalCode, setPostalCode] = useState("");
 	const [provider, setProvider] = useState("paystack");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
@@ -60,6 +67,14 @@ export default function CheckoutPage() {
 		e.preventDefault();
 		setLoading(true);
 		setError("");
+		
+		// Validate required fields
+		if (!firstName.trim() || !lastName.trim() || !phone.trim() || !email.trim() || !address.trim() || !city.trim() || !state.trim()) {
+			setError('Please fill in all required fields');
+			setLoading(false);
+			return;
+		}
+
 		try {
 			// Get cart items from localStorage
 			const cartItems = JSON.parse(localStorage.getItem('kex_cart') || '[]');
@@ -83,7 +98,22 @@ export default function CheckoutPage() {
 			console.log('Transformed items for API:', items);
 			console.log('Total amount being sent:', items.reduce((sum, item) => sum + (item.price * item.quantity), 0));
 
-			const requestBody = { items, customerEmail: email, currency: 'NGN', provider };
+			const requestBody = { 
+				items, 
+				customerEmail: email, 
+				customerDetails: {
+					firstName: firstName.trim(),
+					lastName: lastName.trim(),
+					phone: phone.trim(),
+					email: email.trim(),
+					address: address.trim(),
+					city: city.trim(),
+					state: state.trim(),
+					postalCode: postalCode.trim()
+				},
+				currency: 'NGN', 
+				provider 
+			};
 			console.log('Full request body:', requestBody);
 
 			const res = await fetch(`${API_BASE}/api/orders/init`, {
@@ -289,42 +319,159 @@ export default function CheckoutPage() {
 								</div>
 							) : (
 								<form onSubmit={startCheckout} className="space-y-6">
-									<div>
-										<label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
-										<div className="relative">
-											<svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+									{/* Personal Information */}
+									<div className="bg-gray-50 rounded-xl p-6">
+										<h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+											<svg className="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
 											</svg>
-											<input 
-												id="email"
-												name="email"
-												type="email" 
-												required 
-												className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors duration-200" 
-												placeholder="your@email.com" 
-												value={email} 
-												onChange={(e)=>setEmail(e.target.value)} 
-											/>
+											Personal Information
+										</h3>
+										<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+											<div>
+												<label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 mb-2">First Name *</label>
+												<input 
+													id="firstName"
+													name="firstName"
+													type="text" 
+													required 
+													className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors duration-200" 
+													placeholder="John" 
+													value={firstName} 
+													onChange={(e)=>setFirstName(e.target.value)} 
+												/>
+											</div>
+											<div>
+												<label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 mb-2">Last Name *</label>
+												<input 
+													id="lastName"
+													name="lastName"
+													type="text" 
+													required 
+													className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors duration-200" 
+													placeholder="Doe" 
+													value={lastName} 
+													onChange={(e)=>setLastName(e.target.value)} 
+												/>
+											</div>
+											<div>
+												<label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">Phone Number *</label>
+												<input 
+													id="phone"
+													name="phone"
+													type="tel" 
+													required 
+													className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors duration-200" 
+													placeholder="+234 803 123 4567" 
+													value={phone} 
+													onChange={(e)=>setPhone(e.target.value)} 
+												/>
+											</div>
+											<div>
+												<label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">Email Address *</label>
+												<input 
+													id="email"
+													name="email"
+													type="email" 
+													required 
+													className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors duration-200" 
+													placeholder="your@email.com" 
+													value={email} 
+													onChange={(e)=>setEmail(e.target.value)} 
+												/>
+											</div>
 										</div>
 									</div>
-									<div>
-										<label htmlFor="payment-provider" className="block text-sm font-semibold text-gray-700 mb-2">Payment Method</label>
-										<div className="relative">
-											<svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+									{/* Shipping Address */}
+									<div className="bg-gray-50 rounded-xl p-6">
+										<h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+											<svg className="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+											</svg>
+											Shipping Address
+										</h3>
+										<div className="space-y-4">
+											<div>
+												<label htmlFor="address" className="block text-sm font-semibold text-gray-700 mb-2">Street Address *</label>
+												<input 
+													id="address"
+													name="address"
+													type="text" 
+													required 
+													className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors duration-200" 
+													placeholder="123 Main Street" 
+													value={address} 
+													onChange={(e)=>setAddress(e.target.value)} 
+												/>
+											</div>
+											<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+												<div>
+													<label htmlFor="city" className="block text-sm font-semibold text-gray-700 mb-2">City *</label>
+													<input 
+														id="city"
+														name="city"
+														type="text" 
+														required 
+														className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors duration-200" 
+														placeholder="Lagos" 
+														value={city} 
+														onChange={(e)=>setCity(e.target.value)} 
+													/>
+												</div>
+												<div>
+													<label htmlFor="state" className="block text-sm font-semibold text-gray-700 mb-2">State *</label>
+													<input 
+														id="state"
+														name="state"
+														type="text" 
+														required 
+														className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors duration-200" 
+														placeholder="Lagos State" 
+														value={state} 
+														onChange={(e)=>setState(e.target.value)} 
+													/>
+												</div>
+												<div>
+													<label htmlFor="postalCode" className="block text-sm font-semibold text-gray-700 mb-2">Postal Code</label>
+													<input 
+														id="postalCode"
+														name="postalCode"
+														type="text" 
+														className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors duration-200" 
+														placeholder="100001" 
+														value={postalCode} 
+														onChange={(e)=>setPostalCode(e.target.value)} 
+													/>
+												</div>
+											</div>
+										</div>
+									</div>
+
+									{/* Payment Method */}
+									<div className="bg-gray-50 rounded-xl p-6">
+										<h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+											<svg className="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
 											</svg>
+											Payment Method
+										</h3>
+										<div>
+											<label htmlFor="payment-provider" className="block text-sm font-semibold text-gray-700 mb-2">Select Payment Method</label>
 											<select 
 												id="payment-provider"
 												name="payment-provider"
 												value={provider} 
 												onChange={(e)=>setProvider(e.target.value)} 
-												className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors duration-200 appearance-none bg-white"
+												className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors duration-200 appearance-none bg-white"
 											>
 												<option value="paystack">Paystack (Recommended)</option>
 												<option value="flutterwave">Flutterwave</option>
 											</select>
 										</div>
 									</div>
+
 									<button 
 										disabled={loading} 
 										className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-4 rounded-lg font-semibold hover:from-purple-700 hover:to-purple-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animated-button shadow-lg"

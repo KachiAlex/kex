@@ -22,6 +22,16 @@ const createOrderSchema = z.object({
 	})).min(1),
 	currency: z.string().default('NGN'),
 	customerEmail: z.string().email(),
+	customerDetails: z.object({
+		firstName: z.string().min(1),
+		lastName: z.string().min(1),
+		phone: z.string().min(1),
+		email: z.string().email(),
+		address: z.string().min(1),
+		city: z.string().min(1),
+		state: z.string().min(1),
+		postalCode: z.string().optional(),
+	}),
 	provider: z.enum(['paystack', 'flutterwave']),
 });
 
@@ -55,6 +65,7 @@ router.post('/init', async (req, res) => {
 			amount,
 			currency: parsed.currency,
 			customerEmail: parsed.customerEmail,
+			customerDetails: parsed.customerDetails,
 			provider: parsed.provider,
 			status: 'pending',
 		});
@@ -112,7 +123,9 @@ router.post('/init', async (req, res) => {
 					email: parsed.customerEmail, 
 					currency: parsed.currency, 
 					reference, 
-					redirect_url: `${redirectBase}/checkout/callback?ref=${reference}` 
+					redirect_url: `${redirectBase}/checkout/callback?ref=${reference}`,
+					customerName: `${parsed.customerDetails.firstName} ${parsed.customerDetails.lastName}`,
+					customerPhone: parsed.customerDetails.phone
 				});
 				
 				console.log('Flutterwave init response:', init); // Debug log

@@ -29,7 +29,7 @@ async function verifyPaystack(reference) {
 	}
 }
 
-async function initFlutterwave({ amount, email, currency, reference, redirect_url }) {
+async function initFlutterwave({ amount, email, currency, reference, redirect_url, customerName, customerPhone }) {
 	const res = await axios.post(
 		'https://api.flutterwave.com/v3/payments',
 		{
@@ -38,15 +38,15 @@ async function initFlutterwave({ amount, email, currency, reference, redirect_ur
 			tx_ref: reference,
 			customer: { 
 				email,
-				name: email.split('@')[0] || 'Customer', // Use email prefix as name
-				phone_number: 'N/A' // Flutterwave requires this field
+				name: customerName || email.split('@')[0] || 'Customer',
+				phone_number: customerPhone || 'N/A'
 			},
 			redirect_url,
-			payment_options: 'card,banktransfer,ussd,barter,payattitude,mpesa,mobilemoneyghana,account,all', // All available payment methods
+			payment_options: 'card,banktransfer,ussd,barter,payattitude,mpesa,mobilemoneyghana,account,all',
 			customizations: {
 				title: 'KEX eCommerce',
 				description: 'Complete your purchase',
-				logo: 'https://your-logo-url.com/logo.png' // Optional: Add your logo URL
+				logo: 'https://your-logo-url.com/logo.png'
 			},
 			meta: {
 				consumer_id: 23,

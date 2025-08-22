@@ -476,7 +476,8 @@ export default function AdminPage() {
 												<thead className="bg-gray-50">
 													<tr>
 														<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
-														<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+														<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer Details</th>
+														<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Shipping Address</th>
 														<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
 														<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
 														<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
@@ -486,9 +487,39 @@ export default function AdminPage() {
 													{orders.map(o => (
 														<tr key={o._id}>
 															<td className="px-6 py-4 font-medium">{o.reference}</td>
-															<td className="px-6 py-4 text-sm">{o.customerEmail}</td>
+															<td className="px-6 py-4 text-sm">
+																{o.customerDetails ? (
+																	<div>
+																		<p className="font-medium">{o.customerDetails.firstName} {o.customerDetails.lastName}</p>
+																		<p className="text-gray-600">{o.customerDetails.email}</p>
+																		<p className="text-gray-600">{o.customerDetails.phone}</p>
+																	</div>
+																) : (
+																	<div>
+																		<p className="text-gray-600">{o.customerEmail}</p>
+																		<p className="text-gray-500 text-xs">Legacy order</p>
+																	</div>
+																)}
+															</td>
+															<td className="px-6 py-4 text-sm">
+																{o.customerDetails ? (
+																	<div>
+																		<p className="text-gray-800">{o.customerDetails.address}</p>
+																		<p className="text-gray-600">{o.customerDetails.city}, {o.customerDetails.state}</p>
+																		{o.customerDetails.postalCode && (
+																			<p className="text-gray-600">{o.customerDetails.postalCode}</p>
+																		)}
+																	</div>
+																) : (
+																	<p className="text-gray-500 text-xs">No address</p>
+																)}
+															</td>
 															<td className="px-6 py-4 font-medium">₦{o.amount?.toLocaleString?.() ?? o.amount}</td>
-															<td className="px-6 py-4"><span className={`${o.status==='paid' ? 'status-active' : 'status-pending'} text-white px-2 py-1 rounded-full text-xs`}>{o.status}</span></td>
+															<td className="px-6 py-4">
+																<span className={`${o.status==='paid' ? 'status-active' : 'status-pending'} text-white px-2 py-1 rounded-full text-xs`}>
+																	{o.status}
+																</span>
+															</td>
 															<td className="px-6 py-4 text-sm text-gray-600">{new Date(o.createdAt).toLocaleString()}</td>
 														</tr>
 													))}
