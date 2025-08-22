@@ -21,5 +21,7 @@ services:
         sync: false
       - key: PAYSTACK_SECRET_KEY
         sync: false
+      - key: PAYSTACK_PUBLIC_KEY
+        sync: false
       - key: FLUTTERWAVE_SECRET_KEY
         sync: false 

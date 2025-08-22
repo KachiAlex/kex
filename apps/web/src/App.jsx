@@ -209,10 +209,10 @@ function Categories() {
 function FeaturedProducts({ onAddToCart }) {
 	const [items, setItems] = useState([]);
 	const defaults = [
-		{ id: "p1", icon: "📱", name: "Premium Smartphone X1", desc: "Latest flagship with AI camera", price: 899000, color: "from-blue-400 to-purple-500" },
-		{ id: "p2", icon: "💻", name: "UltraBook Pro 15\"", desc: "High-performance laptop", price: 1299000, color: "from-gray-400 to-gray-600" },
-		{ id: "p3", icon: "🕵️", name: "Mini Spy Camera", desc: "Discreet HD recording", price: 199000, color: "from-red-400 to-pink-500" },
-		{ id: "p4", icon: "⌚", name: "Smart Watch Elite", desc: "Health & fitness tracking", price: 349000, color: "from-green-400 to-blue-500" }
+		{ id: "p1", icon: "📱", name: "Premium Smartphone X1", desc: "Latest flagship with AI camera", price: 8990, color: "from-blue-400 to-purple-500" },
+		{ id: "p2", icon: "💻", name: "UltraBook Pro 15\"", desc: "High-performance laptop", price: 12990, color: "from-gray-400 to-gray-600" },
+		{ id: "p3", icon: "🕵️", name: "Mini Spy Camera", desc: "Discreet HD recording", price: 1990, color: "from-red-400 to-pink-500" },
+		{ id: "p4", icon: "⌚", name: "Smart Watch Elite", desc: "Health & fitness tracking", price: 3490, color: "from-green-400 to-blue-500" }
 	];
 	useEffect(() => {
 		(async () => {
