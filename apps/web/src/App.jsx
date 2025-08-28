@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "./index.css";
+import Footer from "./components/Footer";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
 
@@ -271,58 +272,6 @@ function SpecialOffer() {
 	);
 }
 
-function Footer() {
-	return (
-		<footer className="bg-gray-800 text-white py-12">
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				<div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-					<div>
-						<div className="flex items-center mb-4">
-							<div className="gradient-bg text-white px-3 py-2 rounded-lg font-bold text-lg glow-effect float-animation">KEX</div>
-							<span className="ml-2 font-semibold fade-in-up">eCommerce</span>
-						</div>
-						<p className="text-gray-400">Your trusted source for premium tech gadgets and accessories.</p>
-					</div>
-					<div>
-						<h3 className="font-semibold mb-4">Categories</h3>
-						<ul className="space-y-2 text-gray-400">
-							<li><a href="#" className="hover:text-white">Phones</a></li>
-							<li><a href="#" className="hover:text-white">Laptops</a></li>
-							<li><a href="#" className="hover:text-white">Spy Gadgets</a></li>
-							<li><a href="#" className="hover:text-white">Watches</a></li>
-						</ul>
-					</div>
-					<div>
-						<h3 className="font-semibold mb-4">Support</h3>
-						<ul className="space-y-2 text-gray-400">
-							<li><a href="#" className="hover:text-white">Help Center</a></li>
-							<li><a href="#" className="hover:text-white">Shipping Info</a></li>
-							<li><a href="#" className="hover:text-white">Returns</a></li>
-							<li><a href="#" className="hover:text-white">Contact Us</a></li>
-						</ul>
-					</div>
-					<div>
-						<h3 className="font-semibold mb-4">Contact Us</h3>
-						<div className="space-y-3 text-gray-400">
-							<div className="flex items-center"><span className="mr-2">📧</span><a href="mailto:info@kexecommerce.com" className="hover:text-white">info@kexecommerce.com</a></div>
-							<div className="flex items-center"><span className="mr-2">📞</span><span>+234 803 123 4567</span></div>
-							<div className="flex items-start"><span className="mr-2 mt-1">📍</span><span>17 Fisher St, Dopemu,<br/>Lagos, Nigeria</span></div>
-							<div className="flex space-x-4 mt-4">
-								<button className="bg-gray-700 p-2 rounded-lg hover:bg-gray-600">📘</button>
-								<button className="bg-gray-700 p-2 rounded-lg hover:bg-gray-600">🐦</button>
-								<button className="bg-gray-700 p-2 rounded-lg hover:bg-gray-600">📷</button>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-					<p>© 2024 KEX eCommerce. All rights reserved.</p>
-				</div>
-			</div>
-		</footer>
-	);
-}
-
 export default function App() {
 	const [cartCount, setCartCount] = useState(0);
 	const [flash, setFlash] = useState("");
@@ -377,7 +326,27 @@ export default function App() {
 		}
 	}
 
-
+	async function handleNewsletterSubscribe(email) {
+		try {
+			// Attempt API subscription if backend route exists
+			const res = await fetch(`${API_BASE}/api/newsletter/subscribe`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ email })
+			});
+			if (!res.ok) throw new Error('Failed');
+			return true;
+		} catch {
+			// Fallback to localStorage list
+			try {
+				const list = JSON.parse(localStorage.getItem('kex_newsletter') || '[]');
+				if (!list.includes(email)) localStorage.setItem('kex_newsletter', JSON.stringify([...list, email]));
+				return true;
+			} catch {
+				return false;
+			}
+		}
+	}
 
 	return (
 		<div className="bg-gray-50 min-h-screen">
@@ -392,7 +361,7 @@ export default function App() {
 			<Categories />
 			<FeaturedProducts onAddToCart={handleAddToCart} />
 			<SpecialOffer />
-			<Footer />
+			<Footer onSubscribe={handleNewsletterSubscribe} />
 		</div>
 	);
 }
